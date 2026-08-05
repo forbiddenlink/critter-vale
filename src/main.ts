@@ -93,6 +93,10 @@ reset.textContent = "⟳";
 reset.title = "New game (erases progress)";
 reset.addEventListener("click", () => {
   if (confirm("Start a new game? This erases your saved progress.")) {
+    // Empty in-memory state FIRST so the beforeunload persist() no-ops and
+    // does not immediately re-write the save we are clearing.
+    team.length = 0;
+    caught.length = 0;
     clearSave();
     location.reload();
   }
