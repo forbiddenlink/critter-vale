@@ -12,14 +12,16 @@ export interface Critter {
   xp: number;
 }
 
-/** Element triangle: Ember > Leaf > Aqua > Ember. 2x advantage, 0.5x disadvantage, else 1x. */
-const BEATS: Record<Element, Element> = {
+/** Element triangle: Ember > Leaf > Aqua > Ember. 2x advantage, 0.5x disadvantage, else 1x.
+ *  "Normal" is neutral both ways (always 1x). */
+const BEATS: Record<"Ember" | "Aqua" | "Leaf", "Ember" | "Aqua" | "Leaf"> = {
   Ember: "Leaf",
   Leaf: "Aqua",
   Aqua: "Ember",
 };
 
 export function elementMultiplier(atk: Element, def: Element): number {
+  if (atk === "Normal" || def === "Normal") return 1;
   if (BEATS[atk] === def) return 2;
   if (BEATS[def] === atk) return 0.5;
   return 1;
@@ -52,21 +54,31 @@ export interface Move {
 }
 
 export const MOVESETS: Record<string, [Move, Move]> = {
+  // First move = STAB (own element, the type threat). Second = reliable Normal (always 1x)
+  // so no critter is ever stuck with only a weak move against a countering opponent.
   emberpup: [
     { name: "Ember Nip", power: 30, element: "Ember" },
-    { name: "Tackle", power: 22, element: "Aqua" }, // off-type neutral-ish filler
+    { name: "Tackle", power: 24, element: "Normal" },
   ],
   tadmite: [
     { name: "Bubble Jet", power: 30, element: "Aqua" },
-    { name: "Tackle", power: 22, element: "Leaf" },
+    { name: "Tackle", power: 24, element: "Normal" },
   ],
   leaflet: [
     { name: "Leaf Slash", power: 30, element: "Leaf" },
-    { name: "Tackle", power: 22, element: "Ember" },
+    { name: "Tackle", power: 24, element: "Normal" },
   ],
   mothbit: [
     { name: "Spore Puff", power: 26, element: "Leaf" },
-    { name: "Flutter", power: 18, element: "Aqua" },
+    { name: "Flutter", power: 20, element: "Normal" },
+  ],
+  cindershrew: [
+    { name: "Cinder Dash", power: 28, element: "Ember" },
+    { name: "Scratch", power: 22, element: "Normal" },
+  ],
+  brinefin: [
+    { name: "Aqua Splash", power: 28, element: "Aqua" },
+    { name: "Pounce", power: 22, element: "Normal" },
   ],
 };
 

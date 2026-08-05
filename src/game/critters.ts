@@ -1,7 +1,8 @@
 // Original creature data for Critter Vale. No Pokemon IP.
 // Element triangle: Ember > Leaf > Aqua > Ember.
 
-export type Element = "Ember" | "Aqua" | "Leaf";
+// "Normal" is a move-only element: always neutral (1x) both ways. Creatures never use it.
+export type Element = "Ember" | "Aqua" | "Leaf" | "Normal";
 
 export interface Species {
   id: string;
@@ -60,7 +61,29 @@ export const SPECIES: Record<string, Species> = {
     color: "#b98cff",
     accent: "#efe4ff",
   },
+  cindershrew: {
+    id: "cindershrew",
+    name: "Cindershrew",
+    element: "Ember",
+    baseHp: 22,
+    baseAtk: 11,
+    baseDef: 9,
+    catchRate: 0.45,
+    color: "#ff8b4a",
+    accent: "#ffcf6a",
+  },
+  brinefin: {
+    id: "brinefin",
+    name: "Brinefin",
+    element: "Aqua",
+    baseHp: 24,
+    baseAtk: 10,
+    baseDef: 10,
+    catchRate: 0.45,
+    color: "#2fb6c9",
+    accent: "#d6f6ff",
+  },
 };
 
 export const STARTERS = ["emberpup", "tadmite", "leaflet"] as const;
-export const WILD_POOL = ["mothbit", "leaflet", "tadmite"] as const;
+export const WILD_POOL = ["mothbit", "leaflet", "tadmite", "cindershrew", "brinefin"] as const;

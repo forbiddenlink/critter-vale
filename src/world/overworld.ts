@@ -321,7 +321,7 @@ export class Overworld {
     this.stepCooldown = Math.max(0, this.stepCooldown - dt);
     if (moving && this.inGrass(p.x, p.z) && this.stepCooldown === 0) {
       this.stepCooldown = 0.35;
-      if (Math.random() < 0.12) this.triggerEncounter();
+      if (Math.random() < 0.16) this.triggerEncounter();
     }
   }
 

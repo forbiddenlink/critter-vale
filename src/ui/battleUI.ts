@@ -96,10 +96,21 @@ export function runBattle(
 
   const finish = (outcome: BattleOutcome) => {
     setBusy(true);
+    const banner = document.createElement("div");
+    banner.className = "result " + outcome;
+    banner.textContent =
+      outcome === "lost"
+        ? `${player.species.name} fainted! You hurry back to Sprout Hollow.`
+        : outcome === "won"
+          ? "Victory!"
+          : outcome === "caught"
+            ? `${wild.species.name} joined your team!`
+            : "Got away safely.";
+    root.appendChild(banner);
     setTimeout(() => {
       root.remove();
       onEnd(outcome, wild);
-    }, 1000);
+    }, outcome === "lost" || outcome === "caught" ? 1500 : 1000);
   };
 
   const grantXp = (via: string) => {

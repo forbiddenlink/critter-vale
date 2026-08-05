@@ -202,6 +202,32 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: #14202b; }
   100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
 }
 
+/* result banner (win / lost / caught / ran) */
+.result {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 80%;
+  text-align: center;
+  padding: 18px 30px;
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  background: rgba(20, 32, 43, 0.92);
+  border: 3px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+  animation: resultPop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+.result.won { background: rgba(52, 168, 83, 0.95); }
+.result.caught { background: rgba(123, 75, 208, 0.95); }
+.result.lost { background: rgba(192, 57, 43, 0.95); }
+@keyframes resultPop {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+}
+
 /* screen shake */
 .battle.shake { animation: shake 0.3s ease; }
 @keyframes shake {
