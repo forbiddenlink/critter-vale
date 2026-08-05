@@ -33,7 +33,7 @@ function statAt(base: number, level: number): number {
 export function makeCritter(speciesId: string, level: number): Critter {
   const species = SPECIES[speciesId];
   if (!species) throw new Error(`unknown species: ${speciesId}`);
-  const maxHp = statAt(species.baseHp, level) + level * 2;
+  const maxHp = statAt(species.baseHp, level) + level * 4;
   return {
     species,
     level,
@@ -85,7 +85,8 @@ function computeDamage(
 ): number {
   const mult = elementMultiplier(atkElement, target.species.element);
   const levelScale = (2 * attacker.level) / 5 + 2;
-  const raw = ((levelScale * power * attacker.atk) / (target.def * 5) + 2) * mult;
+  // 0.62 damping + def*6 keeps a same-level 2x hit around half HP (no one-shots).
+  const raw = ((levelScale * power * attacker.atk) / (target.def * 6) + 2) * mult * 0.62;
   return Math.max(1, Math.floor(raw));
 }
 

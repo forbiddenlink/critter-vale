@@ -107,6 +107,23 @@ describe("moves + xp", () => {
   });
 });
 
+describe("balance: no same-level one-shots (found in live playtest)", () => {
+  it("a same-level super-effective move does not one-shot a full-HP target", () => {
+    const atk = makeCritter("emberpup", 10);
+    const def = makeCritter("leaflet", 10); // Ember > Leaf => 2x
+    const stab = movesFor("emberpup")[0];
+    expect(elementMultiplier(stab.element, def.species.element)).toBe(2);
+    expect(moveDamage(atk, def, stab)).toBeLessThan(def.maxHp);
+    expect(moveDamage(atk, def, stab)).toBeLessThan(def.maxHp * 0.75); // leaves counterplay
+  });
+  it("wild Aqua attack vs the Ember starter is survivable at equal level", () => {
+    const wild = makeCritter("tadmite", 6);
+    const player = makeCritter("emberpup", 6);
+    const wildMove = movesFor("tadmite")[0]; // Aqua, 2x vs Ember
+    expect(moveDamage(wild, player, wildMove)).toBeLessThan(player.maxHp);
+  });
+});
+
 describe("SPECIES data integrity", () => {
   it("has the three starters + one wild", () => {
     for (const id of ["emberpup", "tadmite", "leaflet", "mothbit"]) {
