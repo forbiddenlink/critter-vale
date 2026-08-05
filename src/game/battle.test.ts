@@ -9,6 +9,7 @@ import {
   attemptCatch,
   xpReward,
   gainXp,
+  checkEvolution,
 } from "./battle";
 import { SPECIES } from "./critters";
 
@@ -121,6 +122,26 @@ describe("balance: no same-level one-shots (found in live playtest)", () => {
     const player = makeCritter("emberpup", 6);
     const wildMove = movesFor("tadmite")[0]; // Aqua, 2x vs Ember
     expect(moveDamage(wild, player, wildMove)).toBeLessThan(player.maxHp);
+  });
+});
+
+describe("evolution", () => {
+  it("emberpup evolves to emberwulf at level 12+", () => {
+    const c = makeCritter("emberpup", 6);
+    gainXp(c, 1e9);
+    expect(c.level).toBeGreaterThanOrEqual(12);
+    expect(checkEvolution(c)).toBe("emberwulf");
+    expect(c.species.id).toBe("emberwulf");
+    expect(c.species.evolvesTo).toBeUndefined(); // final form
+  });
+  it("does not evolve below the threshold", () => {
+    expect(checkEvolution(makeCritter("tadmite", 6))).toBeNull();
+  });
+  it("evolving raises max HP", () => {
+    const c = makeCritter("leaflet", 12);
+    const before = c.maxHp;
+    checkEvolution(c);
+    expect(c.maxHp).toBeGreaterThan(before);
   });
 });
 

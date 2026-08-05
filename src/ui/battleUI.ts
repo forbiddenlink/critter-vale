@@ -8,6 +8,7 @@ import {
   catchChance,
   xpReward,
   gainXp,
+  checkEvolution,
 } from "../game/battle";
 import { sfx } from "../audio";
 
@@ -120,6 +121,15 @@ export function runBattle(
       flash("allyMon", "levelup");
       sfx("levelup");
       log(`${via} ${player.species.name} grew to Lv${player.level}!`);
+      const evolvedTo = checkEvolution(player);
+      if (evolvedTo) {
+        (el("#allyMon") as HTMLImageElement).src = `/sprites/${evolvedTo}.png`;
+        (el(".ally .nameplate") as HTMLElement).innerHTML =
+          `${player.species.name} <small id="allyLv">Lv${player.level}</small> · ${player.species.element}`;
+        flash("allyMon", "levelup");
+        sfx("levelup");
+        log(`What? ${player.species.name} evolved!`);
+      }
     } else {
       log(via);
     }

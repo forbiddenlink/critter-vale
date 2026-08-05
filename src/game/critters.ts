@@ -14,6 +14,8 @@ export interface Species {
   catchRate: number; // 0..1 baseline ease of capture
   color: string; // placeholder billboard tint
   accent: string; // secondary sprite color
+  evolvesTo?: string; // species id of the evolved form
+  evolvesAt?: number; // level at which it evolves
 }
 
 export const SPECIES: Record<string, Species> = {
@@ -27,6 +29,8 @@ export const SPECIES: Record<string, Species> = {
     catchRate: 0.35,
     color: "#ff7a3c",
     accent: "#ffd24a",
+    evolvesTo: "emberwulf",
+    evolvesAt: 12,
   },
   tadmite: {
     id: "tadmite",
@@ -38,6 +42,8 @@ export const SPECIES: Record<string, Species> = {
     catchRate: 0.35,
     color: "#3ca7ff",
     accent: "#bfeaff",
+    evolvesTo: "torretoad",
+    evolvesAt: 12,
   },
   leaflet: {
     id: "leaflet",
@@ -49,6 +55,41 @@ export const SPECIES: Record<string, Species> = {
     catchRate: 0.35,
     color: "#4cc95a",
     accent: "#d4f7a0",
+    evolvesTo: "thornmaw",
+    evolvesAt: 12,
+  },
+  emberwulf: {
+    id: "emberwulf",
+    name: "Emberwulf",
+    element: "Ember",
+    baseHp: 40,
+    baseAtk: 19,
+    baseDef: 13,
+    catchRate: 0.18,
+    color: "#ff5e2a",
+    accent: "#ffc23a",
+  },
+  torretoad: {
+    id: "torretoad",
+    name: "Torretoad",
+    element: "Aqua",
+    baseHp: 46,
+    baseAtk: 15,
+    baseDef: 17,
+    catchRate: 0.18,
+    color: "#1f8fd6",
+    accent: "#aee4ff",
+  },
+  thornmaw: {
+    id: "thornmaw",
+    name: "Thornmaw",
+    element: "Leaf",
+    baseHp: 43,
+    baseAtk: 16,
+    baseDef: 16,
+    catchRate: 0.18,
+    color: "#2fae44",
+    accent: "#c6f18a",
   },
   mothbit: {
     id: "mothbit",

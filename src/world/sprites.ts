@@ -44,6 +44,44 @@ export function makePlayerSprite(worldHeight = 2.3): THREE.Sprite {
   return spriteFrom(`/sprites/player.png`, playerCanvas(), worldHeight);
 }
 
+export function makeNpcSprite(shirt: string, worldHeight = 2.1): THREE.Sprite {
+  const c = document.createElement("canvas");
+  c.width = S;
+  c.height = S;
+  const g = c.getContext("2d")!;
+  const cx = 64;
+  g.fillStyle = "rgba(0,0,0,0.18)";
+  g.beginPath();
+  g.ellipse(cx, 118, 22, 6, 0, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#3a3a55"; // legs
+  g.fillRect(cx - 11, 92, 9, 22);
+  g.fillRect(cx + 2, 92, 9, 22);
+  g.fillStyle = shirt; // torso
+  g.beginPath();
+  g.roundRect(cx - 16, 56, 32, 40, 7);
+  g.fill();
+  g.fillStyle = "#f0b488"; // head
+  g.beginPath();
+  g.arc(cx, 40, 16, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#5a3a22"; // hair
+  g.beginPath();
+  g.arc(cx, 34, 16, Math.PI, 0);
+  g.fill();
+  g.fillStyle = "#1a1a1a"; // eyes
+  g.beginPath();
+  g.arc(cx - 5, 41, 2, 0, Math.PI * 2);
+  g.arc(cx + 5, 41, 2, 0, Math.PI * 2);
+  g.fill();
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  sprite.scale.set(worldHeight, worldHeight, 1);
+  return sprite;
+}
+
 // ---- procedural fallbacks (used only if a PNG is missing) ----
 const S = 128;
 

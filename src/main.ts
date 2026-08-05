@@ -61,7 +61,7 @@ function drawHud() {
   if (!team.length) return;
   hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow<br>Team: ${team
     .map((m) => `${m.species.name} Lv${m.level}`)
-    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows to walk · step in tall grass to find critters</small>`;
+    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows to walk · tall grass = wild critters · E to talk to villagers</small>`;
 }
 
 function persist() {
@@ -82,6 +82,36 @@ world.onEncounter = ({ speciesId, level }) => {
     persist();
     world.resume();
   });
+};
+
+// NPC dialog
+world.onInteract = (npc) => {
+  const d = document.createElement("div");
+  d.className = "dialog";
+  let i = 0;
+  const render = () => {
+    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${npc.lines[i]}</p><div class="dialog-cont">▶ space / click${i < npc.lines.length - 1 ? "" : " to close"}</div></div>`;
+  };
+  const close = () => {
+    d.remove();
+    window.removeEventListener("keydown", onKey);
+    world.resume();
+  };
+  const advance = () => {
+    i += 1;
+    if (i >= npc.lines.length) close();
+    else render();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === " " || e.key === "e" || e.key === "Enter") {
+      e.preventDefault();
+      advance();
+    } else if (e.key === "Escape") close();
+  };
+  d.addEventListener("click", advance);
+  window.addEventListener("keydown", onKey);
+  render();
+  document.body.appendChild(d);
 };
 
 window.addEventListener("beforeunload", persist);

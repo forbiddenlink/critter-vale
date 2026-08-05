@@ -35,6 +35,39 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: #14202b; }
 .mute:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
 .reset { right: 64px; font-size: 22px; }
 
+/* NPC dialog */
+.dialog {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 22px;
+  z-index: 15;
+  cursor: pointer;
+}
+.dialog-box {
+  width: min(680px, 100%);
+  background: rgba(255, 255, 255, 0.96);
+  border: 3px solid #14202b;
+  border-radius: 14px;
+  padding: 16px 20px 12px;
+  box-shadow: 0 8px 0 #14202b, 0 16px 30px rgba(0, 0, 0, 0.35);
+  animation: dialogUp 0.25s ease both;
+}
+@keyframes dialogUp { from { opacity: 0; transform: translateY(20px); } }
+.dialog-name {
+  display: inline-block;
+  font-weight: 900;
+  color: #fff;
+  background: #2b6cff;
+  border: 2px solid #14202b;
+  border-radius: 8px;
+  padding: 2px 12px;
+  margin-bottom: 8px;
+}
+.dialog-box p { font-size: 18px; font-weight: 600; line-height: 1.45; color: #14202b; }
+.dialog-cont { text-align: right; font-size: 12px; font-weight: 700; color: #678; margin-top: 8px; }
+
 /* title / starter select */
 .title {
   position: fixed;

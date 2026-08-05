@@ -80,6 +80,18 @@ export const MOVESETS: Record<string, [Move, Move]> = {
     { name: "Aqua Splash", power: 28, element: "Aqua" },
     { name: "Pounce", power: 22, element: "Normal" },
   ],
+  emberwulf: [
+    { name: "Flare Fang", power: 38, element: "Ember" },
+    { name: "Body Slam", power: 28, element: "Normal" },
+  ],
+  torretoad: [
+    { name: "Torrent", power: 38, element: "Aqua" },
+    { name: "Body Slam", power: 28, element: "Normal" },
+  ],
+  thornmaw: [
+    { name: "Vine Lash", power: 38, element: "Leaf" },
+    { name: "Body Slam", power: 28, element: "Normal" },
+  ],
 };
 
 export function movesFor(speciesId: string): [Move, Move] {
@@ -137,6 +149,22 @@ export function gainXp(c: Critter, amount: number): number {
     c.hp = Math.min(c.maxHp, c.hp + Math.max(0, hpGain));
   }
   return gained;
+}
+
+/** Evolve in place if the critter has reached its evolution level. Returns the new species id, or null. */
+export function checkEvolution(c: Critter): string | null {
+  const { evolvesTo, evolvesAt } = c.species;
+  if (!evolvesTo || !evolvesAt || c.level < evolvesAt) return null;
+  const evo = SPECIES[evolvesTo];
+  if (!evo) return null;
+  const ratio = c.hp / c.maxHp;
+  const fresh = makeCritter(evo.id, c.level);
+  c.species = evo;
+  c.maxHp = fresh.maxHp;
+  c.atk = fresh.atk;
+  c.def = fresh.def;
+  c.hp = Math.max(1, Math.round(c.maxHp * ratio));
+  return evo.id;
 }
 
 /** Probability of catching a wild critter given current HP + species catchRate. [0,1]. */

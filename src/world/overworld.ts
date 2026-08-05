@@ -2,13 +2,52 @@
 import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { makePlayerSprite } from "./sprites";
+import { makePlayerSprite, makeNpcSprite } from "./sprites";
 import { WILD_POOL } from "../game/critters";
 
 export interface Encounter {
   speciesId: string;
   level: number;
 }
+
+export interface Npc {
+  name: string;
+  lines: string[];
+  x: number;
+  z: number;
+  shirt: string;
+}
+
+const NPCS: Npc[] = [
+  {
+    name: "Prof. Hollis",
+    shirt: "#5b8fd8",
+    x: -4,
+    z: 3,
+    lines: [
+      "Welcome to Sprout Hollow! I study the critters of the valley.",
+      "Tall grass hides wild critters. Weaken one, then Catch it.",
+      "Remember the types: Ember beats Leaf, Leaf beats Aqua, Aqua beats Ember.",
+    ],
+  },
+  {
+    name: "Maple",
+    shirt: "#e0b45b",
+    x: 5,
+    z: 5,
+    lines: [
+      "My critter grew so strong it changed shape at level 12!",
+      "They call that evolving. Keep battling and yours will too.",
+    ],
+  },
+  {
+    name: "Finn",
+    shirt: "#4cc95a",
+    x: 12,
+    z: -6,
+    lines: ["The pond critters hit hard.", "Bring a Leaf type and you'll be fine!"],
+  },
+];
 
 const WORLD = 40;
 const GRASS_TILES: Array<[number, number, number, number]> = [
@@ -28,6 +67,8 @@ export class Overworld {
   private elapsed = 0;
   private windMats: THREE.Material[] = [];
   onEncounter: ((e: Encounter) => void) | null = null;
+  onInteract: ((npc: Npc) => void) | null = null;
+  private nearNpc: Npc | null = null;
   active = true;
 
   constructor(aspect: number) {
@@ -42,9 +83,25 @@ export class Overworld {
 
     this.player.position.set(0, 0.95, 0);
     this.scene.add(this.player);
+    this.buildNpcs();
 
-    window.addEventListener("keydown", (e) => this.keys.add(e.key.toLowerCase()));
+    window.addEventListener("keydown", (e) => {
+      const k = e.key.toLowerCase();
+      this.keys.add(k);
+      if ((k === "e" || k === " ") && this.active && this.nearNpc) {
+        this.active = false;
+        this.onInteract?.(this.nearNpc);
+      }
+    });
     window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+  }
+
+  private buildNpcs() {
+    for (const npc of NPCS) {
+      const s = makeNpcSprite(npc.shirt);
+      s.position.set(npc.x, 1.05, npc.z);
+      this.scene.add(s);
+    }
   }
 
   private buildSky() {
@@ -317,6 +374,15 @@ export class Overworld {
     const p = this.player.position;
     this.camera.position.set(p.x, p.y + 15, p.z + 17);
     this.camera.lookAt(p.x, p.y, p.z - 2);
+
+    // nearest NPC in talk range
+    this.nearNpc = null;
+    for (const npc of NPCS) {
+      if (Math.hypot(p.x - npc.x, p.z - npc.z) < 2.8) {
+        this.nearNpc = npc;
+        break;
+      }
+    }
 
     this.stepCooldown = Math.max(0, this.stepCooldown - dt);
     if (moving && this.inGrass(p.x, p.z) && this.stepCooldown === 0) {
