@@ -18,6 +18,8 @@ export interface Npc {
   shirt: string;
 }
 
+const HEALER = { x: -10, z: 5, r: 2.6 };
+
 const NPCS: Npc[] = [
   {
     name: "Prof. Hollis",
@@ -68,7 +70,9 @@ export class Overworld {
   private windMats: THREE.Material[] = [];
   onEncounter: ((e: Encounter) => void) | null = null;
   onInteract: ((npc: Npc) => void) | null = null;
+  onHeal: (() => void) | null = null;
   private nearNpc: Npc | null = null;
+  private inHealer = false;
   active = true;
 
   constructor(aspect: number) {
@@ -84,6 +88,7 @@ export class Overworld {
     this.player.position.set(0, 0.95, 0);
     this.scene.add(this.player);
     this.buildNpcs();
+    this.buildHealer();
 
     window.addEventListener("keydown", (e) => {
       const k = e.key.toLowerCase();
@@ -102,6 +107,33 @@ export class Overworld {
       s.position.set(npc.x, 1.05, npc.z);
       this.scene.add(s);
     }
+  }
+
+  private buildHealer() {
+    // glowing green healing pad with a white cross (bloom picks up the glow)
+    const pad = new THREE.Mesh(
+      new THREE.CylinderGeometry(HEALER.r, HEALER.r, 0.2, 32),
+      new THREE.MeshStandardMaterial({
+        color: 0x35d07f,
+        emissive: 0x2fd07a,
+        emissiveIntensity: 0.9,
+        roughness: 0.5,
+      })
+    );
+    pad.position.set(HEALER.x, 0.1, HEALER.z);
+    pad.receiveShadow = true;
+    this.scene.add(pad);
+    const crossMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.8,
+    });
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.5), crossMat);
+    bar.position.set(HEALER.x, 0.22, HEALER.z);
+    this.scene.add(bar);
+    const bar2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 1.6), crossMat);
+    bar2.position.set(HEALER.x, 0.22, HEALER.z);
+    this.scene.add(bar2);
   }
 
   private buildSky() {
@@ -383,6 +415,11 @@ export class Overworld {
         break;
       }
     }
+
+    // healer pad: fire once on entering the zone
+    const onPad = Math.hypot(p.x - HEALER.x, p.z - HEALER.z) < HEALER.r;
+    if (onPad && !this.inHealer) this.onHeal?.();
+    this.inHealer = onPad;
 
     this.stepCooldown = Math.max(0, this.stepCooldown - dt);
     if (moving && this.inGrass(p.x, p.z) && this.stepCooldown === 0) {

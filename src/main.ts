@@ -40,9 +40,8 @@ const team: Critter[] = [];
 const caught: string[] = [];
 
 function activeMon(): Critter {
-  const mon = team[0];
-  mon.hp = mon.maxHp; // heal on returning to overworld
-  return mon;
+  // HP now persists between encounters — visit the healer or faint to restore it.
+  return team[0];
 }
 
 const hud = document.createElement("div");
@@ -60,14 +59,14 @@ document.body.appendChild(mute);
 function drawHud() {
   if (!team.length) return;
   hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow<br>Team: ${team
-    .map((m) => `${m.species.name} Lv${m.level}`)
-    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows to walk · tall grass = wild critters · E to talk to villagers</small>`;
+    .map((m) => `${m.species.name} Lv${m.level} (${m.hp}/${m.maxHp} HP)`)
+    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · tall grass = wild critters · E to talk · green pad = heal</small>`;
 }
 
 function persist() {
   if (!team.length) return;
   writeSave({
-    team: team.map((m) => ({ id: m.species.id, level: m.level, xp: m.xp })),
+    team: team.map((m) => ({ id: m.species.id, level: m.level, xp: m.xp, hp: m.hp })),
     caught,
     pos: world.getPos(),
   });
@@ -78,6 +77,7 @@ world.onEncounter = ({ speciesId, level }) => {
   const wild = makeCritter(speciesId, level);
   runBattle(activeMon(), wild, (outcome, w) => {
     if (outcome === "caught" && !caught.includes(w.species.name)) caught.push(w.species.name);
+    if (outcome === "lost") team[0].hp = team[0].maxHp; // recovered back in town after fainting
     drawHud(); // reflect XP / level-ups + new catches
     persist();
     world.resume();
@@ -114,6 +114,26 @@ world.onInteract = (npc) => {
   document.body.appendChild(d);
 };
 
+function showToast(msg: string) {
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+world.onHeal = () => {
+  if (!team.length) return;
+  const hurt = team.some((m) => m.hp < m.maxHp);
+  team.forEach((m) => (m.hp = m.maxHp));
+  if (hurt) {
+    showToast("💚 Your critters are fully healed!");
+    sfx("levelup");
+    drawHud();
+    persist();
+  }
+};
+
 window.addEventListener("beforeunload", persist);
 
 // New Game button (clears save)
@@ -147,6 +167,7 @@ function resumeFromSave(s: SaveData) {
   for (const c of s.team) {
     const m = makeCritter(c.id, c.level);
     m.xp = c.xp;
+    if (typeof c.hp === "number") m.hp = Math.max(1, Math.min(m.maxHp, c.hp));
     team.push(m);
   }
   world.setPos(s.pos.x, s.pos.z);

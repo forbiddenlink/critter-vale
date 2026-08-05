@@ -3,6 +3,7 @@ export interface SavedCritter {
   id: string;
   level: number;
   xp: number;
+  hp: number;
 }
 export interface SaveData {
   team: SavedCritter[];
