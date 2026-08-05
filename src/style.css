@@ -281,6 +281,42 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: #14202b; }
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
 }
 
+/* party switch menu */
+.switch-menu {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  background: rgba(20, 32, 43, 0.72);
+  backdrop-filter: blur(3px);
+}
+.switch-title { color: #fff; font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+.switch-menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, 92%);
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px solid #14202b;
+  border-left: 8px solid var(--c, #14202b);
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 800;
+  color: #14202b;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #14202b;
+}
+.switch-menu button:active { transform: translateY(3px); box-shadow: 0 1px 0 #14202b; }
+.switch-menu button img { width: 46px; height: 46px; object-fit: contain; }
+.switch-menu .sw-hp { margin-left: auto; font-size: 14px; color: #567; }
+.switch-menu .sw-cancel { border-left-color: #14202b; justify-content: center; font-weight: 700; }
+
 /* screen shake */
 .battle.shake { animation: shake 0.3s ease; }
 @keyframes shake {

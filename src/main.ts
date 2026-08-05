@@ -39,10 +39,7 @@ composer.addPass(new OutputPass());
 const team: Critter[] = [];
 const caught: string[] = [];
 
-function activeMon(): Critter {
-  // HP now persists between encounters — visit the healer or faint to restore it.
-  return team[0];
-}
+const MAX_TEAM = 6;
 
 const hud = document.createElement("div");
 hud.className = "hud";
@@ -75,10 +72,13 @@ function persist() {
 world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   const wild = makeCritter(speciesId, level);
-  runBattle(activeMon(), wild, (outcome, w) => {
-    if (outcome === "caught" && !caught.includes(w.species.name)) caught.push(w.species.name);
-    if (outcome === "lost") team[0].hp = team[0].maxHp; // recovered back in town after fainting
-    drawHud(); // reflect XP / level-ups + new catches
+  runBattle(team, wild, (outcome, w) => {
+    if (outcome === "caught") {
+      if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
+      if (!caught.includes(w.species.name)) caught.push(w.species.name);
+    }
+    if (outcome === "lost") team.forEach((m) => (m.hp = m.maxHp)); // whole team recovers in town
+    drawHud(); // reflect XP / level-ups + catches
     persist();
     world.resume();
   });

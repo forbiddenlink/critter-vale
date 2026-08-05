@@ -1,4 +1,5 @@
-// DOM battle screen. Move choice, type effectiveness, catching, XP + level-ups.
+// DOM battle screen with a PARTY: switch critters, faint = swap not instant loss,
+// catch adds to your team. Type effectiveness, XP + evolution.
 import type { Critter, Move } from "../game/battle";
 import {
   moveDamage,
@@ -14,12 +15,14 @@ import { sfx } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
 
+const MAX_TEAM = 6;
+
 export function runBattle(
-  player: Critter,
+  party: Critter[],
   wild: Critter,
   onEnd: (outcome: BattleOutcome, wild: Critter) => void
 ) {
-  const playerMoves = movesFor(player.species.id);
+  let active = party.find((m) => m.hp > 0) ?? party[0];
   const wildMove = movesFor(wild.species.id)[0];
 
   const root = document.createElement("div");
@@ -32,26 +35,26 @@ export function runBattle(
         <div class="mon-wrap"><img class="mon foe-mon" id="foeMon" src="/sprites/${wild.species.id}.png" alt=""></div>
       </div>
       <div class="ally">
-        <div class="mon-wrap"><img class="mon ally-mon" id="allyMon" src="/sprites/${player.species.id}.png" alt=""></div>
-        <div class="nameplate">${player.species.name} <small id="allyLv">Lv${player.level}</small> · ${player.species.element}</div>
+        <div class="mon-wrap"><img class="mon ally-mon" id="allyMon" src="" alt=""></div>
+        <div class="nameplate"></div>
         <div class="hpbar"><span id="allyHp"></span></div>
       </div>
     </div>
     <div class="log" id="log">A wild ${wild.species.name} appeared!</div>
     <div class="actions">
       <div class="moves">
-        <button class="move" data-i="0">${playerMoves[0].name}<small>${playerMoves[0].element}</small></button>
-        <button class="move" data-i="1">${playerMoves[1].name}<small>${playerMoves[1].element}</small></button>
+        <button class="move" data-i="0"></button>
+        <button class="move" data-i="1"></button>
       </div>
       <div class="menu">
         <button id="catch">Catch</button>
+        <button id="switch">Switch</button>
         <button id="run">Run</button>
       </div>
     </div>
   `;
   document.body.appendChild(root);
 
-  // encounter flash
   const flashEl = document.createElement("div");
   flashEl.className = "flash";
   document.body.appendChild(flashEl);
@@ -61,12 +64,28 @@ export function runBattle(
   const log = (msg: string) => (el("#log").textContent = msg);
   const drawHp = () => {
     el("#foeHp").style.width = `${Math.max(0, (wild.hp / wild.maxHp) * 100)}%`;
-    el("#allyHp").style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+    el("#allyHp").style.width = `${Math.max(0, (active.hp / active.maxHp) * 100)}%`;
   };
-  drawHp();
 
-  const buttons = root.querySelectorAll("button");
-  const setBusy = (b: boolean) => buttons.forEach((x) => ((x as HTMLButtonElement).disabled = b));
+  const renderActive = () => {
+    (el("#allyMon") as HTMLImageElement).src = `/sprites/${active.species.id}.png`;
+    el(".ally .nameplate").innerHTML =
+      `${active.species.name} <small id="allyLv">Lv${active.level}</small> · ${active.species.element}`;
+    const moves = movesFor(active.species.id);
+    root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
+      const m = moves[Number(btn.dataset.i)];
+      btn.innerHTML = `${m.name}<small>${m.element}</small>`;
+    });
+    drawHp();
+  };
+  renderActive();
+
+  const buttons = () => root.querySelectorAll<HTMLButtonElement>(".actions button");
+  const setBusy = (b: boolean) => {
+    buttons().forEach((x) => (x.disabled = b));
+    const canSwitch = party.filter((m) => m.hp > 0 && m !== active).length > 0;
+    if (!b) (el("#switch") as HTMLButtonElement).disabled = !canSwitch;
+  };
 
   const flash = (id: string, cls = "hit") => {
     const m = el("#" + id);
@@ -101,49 +120,97 @@ export function runBattle(
     banner.className = "result " + outcome;
     banner.textContent =
       outcome === "lost"
-        ? `${player.species.name} fainted! You hurry back to Sprout Hollow.`
+        ? "Your team fainted! You hurry back to Sprout Hollow."
         : outcome === "won"
           ? "Victory!"
           : outcome === "caught"
             ? `${wild.species.name} joined your team!`
             : "Got away safely.";
     root.appendChild(banner);
-    setTimeout(() => {
-      root.remove();
-      onEnd(outcome, wild);
-    }, outcome === "lost" || outcome === "caught" ? 1500 : 1000);
+    setTimeout(
+      () => {
+        root.remove();
+        onEnd(outcome, wild);
+      },
+      outcome === "lost" || outcome === "caught" ? 1500 : 1000
+    );
   };
 
   const grantXp = (via: string) => {
-    const levels = gainXp(player, xpReward(wild));
+    const levels = gainXp(active, xpReward(wild));
     if (levels > 0) {
-      el("#allyLv").textContent = `Lv${player.level}`;
+      el("#allyLv").textContent = `Lv${active.level}`;
       flash("allyMon", "levelup");
       sfx("levelup");
-      log(`${via} ${player.species.name} grew to Lv${player.level}!`);
-      const evolvedTo = checkEvolution(player);
+      log(`${via} ${active.species.name} grew to Lv${active.level}!`);
+      const evolvedTo = checkEvolution(active);
       if (evolvedTo) {
-        (el("#allyMon") as HTMLImageElement).src = `/sprites/${evolvedTo}.png`;
-        (el(".ally .nameplate") as HTMLElement).innerHTML =
-          `${player.species.name} <small id="allyLv">Lv${player.level}</small> · ${player.species.element}`;
+        renderActive();
         flash("allyMon", "levelup");
         sfx("levelup");
-        log(`What? ${player.species.name} evolved!`);
+        log(`What? ${active.species.name} evolved!`);
       }
     } else {
       log(via);
     }
   };
 
+  // --- switch menu ---
+  const openSwitchMenu = (forced: boolean) => {
+    const menu = document.createElement("div");
+    menu.className = "switch-menu";
+    const options = party.filter((m) => m.hp > 0 && m !== active);
+    menu.innerHTML =
+      `<div class="switch-title">${forced ? `${active.species.name} fainted! Send out...` : "Choose a critter"}</div>` +
+      options
+        .map(
+          (m) =>
+            `<button data-id="${m.species.id}" style="--c:${m.species.color}">
+               <img src="/sprites/${m.species.id}.png" alt="">
+               <span>${m.species.name} <small>Lv${m.level}</small></span>
+               <span class="sw-hp">${m.hp}/${m.maxHp}</span>
+             </button>`
+        )
+        .join("") +
+      (forced ? "" : `<button class="sw-cancel" data-id="">Back</button>`);
+    root.appendChild(menu);
+    menu.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        menu.remove();
+        if (!id) {
+          setBusy(false);
+          return;
+        }
+        const mon = options.find((m) => m.species.id === id)!;
+        active = mon;
+        renderActive();
+        log(`Go, ${active.species.name}!`);
+        if (forced) setBusy(false);
+        else setTimeout(foeTurn, 650); // switching costs your turn
+      });
+    });
+  };
+
+  const handleFaint = () => {
+    if (party.some((m) => m.hp > 0)) {
+      sfx("hit");
+      openSwitchMenu(true);
+    } else {
+      log(`${active.species.name} fainted!`);
+      finish("lost");
+    }
+  };
+
   const foeTurn = () => {
-    const dmg = moveDamage(wild, player, wildMove);
-    const mult = elementMultiplier(wildMove.element, player.species.element);
-    player.hp = Math.max(0, player.hp - dmg);
+    const dmg = moveDamage(wild, active, wildMove);
+    const mult = elementMultiplier(wildMove.element, active.species.element);
+    active.hp = Math.max(0, active.hp - dmg);
     strike("ally", "allyMon", dmg);
     drawHp();
-    if (player.hp <= 0) {
-      log(`${player.species.name} fainted! You flee back to town...`);
-      finish("lost");
+    if (active.hp <= 0) {
+      log(`Wild ${wild.species.name} used ${wildMove.name}!${effLabel(mult)}`);
+      setTimeout(handleFaint, 650);
     } else {
       log(`Wild ${wild.species.name} used ${wildMove.name}!${effLabel(mult)} Your move.`);
       setBusy(false);
@@ -152,35 +219,44 @@ export function runBattle(
 
   const useMove = (move: Move) => {
     setBusy(true);
-    const dmg = moveDamage(player, wild, move);
+    const dmg = moveDamage(active, wild, move);
     const mult = elementMultiplier(move.element, wild.species.element);
     wild.hp = Math.max(0, wild.hp - dmg);
     strike("foe", "foeMon", dmg);
     drawHp();
+    log(`${active.species.name} used ${move.name}!${effLabel(mult)}`);
     if (wild.hp <= 0) {
-      log(`${player.species.name} used ${move.name}!${effLabel(mult)}`);
       setTimeout(() => {
         grantXp(`Wild ${wild.species.name} fainted!`);
         setTimeout(() => finish("won"), 700);
       }, 500);
     } else {
-      log(`${player.species.name} used ${move.name}!${effLabel(mult)}`);
       setTimeout(foeTurn, 700);
     }
   };
 
   root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
-    btn.addEventListener("click", () => useMove(playerMoves[Number(btn.dataset.i)]));
+    btn.addEventListener("click", () => useMove(movesFor(active.species.id)[Number(btn.dataset.i)]));
+  });
+
+  el("#switch").addEventListener("click", () => {
+    setBusy(true);
+    openSwitchMenu(false);
   });
 
   el("#catch").addEventListener("click", () => {
     setBusy(true);
+    if (party.length >= MAX_TEAM) {
+      log("Your team is full! You can't catch more right now.");
+      setBusy(false);
+      return;
+    }
     const pct = Math.round(catchChance(wild) * 100);
     if (attemptCatch(wild)) {
       el("#foeMon").classList.add("caught");
       sfx("catch");
       setTimeout(() => {
-        grantXp(`Gotcha! ${wild.species.name} was caught! (${pct}% shot)`);
+        log(`Gotcha! ${wild.species.name} was caught! (${pct}% shot)`);
         setTimeout(() => finish("caught"), 700);
       }, 400);
     } else {
@@ -193,4 +269,6 @@ export function runBattle(
     log("Got away safely.");
     finish("ran");
   });
+
+  setBusy(false);
 }
