@@ -140,6 +140,30 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: #14202b; }
 @keyframes bobFoe { 50% { transform: translateY(-12px); } }
 @keyframes bobAlly { 50% { transform: translateY(9px); } }
 
+/* mons slide in when the battle opens */
+.foe .mon-wrap { animation: enterFoe 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.ally .mon-wrap { animation: enterAlly 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.1s both; }
+@keyframes enterFoe { from { opacity: 0; transform: translateX(140px); } }
+@keyframes enterAlly { from { opacity: 0; transform: translateX(-140px); } }
+
+/* catch: shrink + spin into nothing */
+.mon.caught { animation: caught 0.7s ease-in forwards; }
+@keyframes caught {
+  40% { transform: scale(1.15) rotate(90deg); filter: brightness(2); }
+  100% { transform: scale(0) rotate(540deg); opacity: 0; }
+}
+
+/* full-screen encounter flash */
+.flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 30;
+  pointer-events: none;
+  animation: flash 0.5s ease-out forwards;
+}
+@keyframes flash { from { opacity: 0.9; } to { opacity: 0; } }
+
 /* contact shadow oval under each mon */
 .mon-wrap::after {
   content: "";

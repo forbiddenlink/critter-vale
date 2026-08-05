@@ -50,6 +50,12 @@ export function runBattle(
   `;
   document.body.appendChild(root);
 
+  // encounter flash
+  const flashEl = document.createElement("div");
+  flashEl.className = "flash";
+  document.body.appendChild(flashEl);
+  setTimeout(() => flashEl.remove(), 550);
+
   const el = (sel: string) => root.querySelector(sel) as HTMLElement;
   const log = (msg: string) => (el("#log").textContent = msg);
   const drawHp = () => {
@@ -150,7 +156,7 @@ export function runBattle(
     setBusy(true);
     const pct = Math.round(catchChance(wild) * 100);
     if (attemptCatch(wild)) {
-      flash("foeMon", "levelup");
+      el("#foeMon").classList.add("caught");
       sfx("catch");
       setTimeout(() => {
         grantXp(`Gotcha! ${wild.species.name} was caught! (${pct}% shot)`);
