@@ -276,11 +276,22 @@ const existing = loadSave();
 if (existing) resumeFromSave(existing);
 else showTitle();
 
+const prompt = document.createElement("div");
+prompt.className = "prompt";
+document.body.appendChild(prompt);
+
 let last = performance.now();
 function loop(now: number) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   world.update(dt);
+  const hint = world.hint();
+  if (hint) {
+    prompt.textContent = hint;
+    prompt.classList.add("show");
+  } else {
+    prompt.classList.remove("show");
+  }
   composer.render();
   requestAnimationFrame(loop);
 }

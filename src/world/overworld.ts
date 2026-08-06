@@ -460,6 +460,17 @@ export class Overworld {
     return { x: this.player.position.x, z: this.player.position.z };
   }
 
+  /** Contextual action hint for the HUD, or null when there's nothing to interact with. */
+  hint(): string | null {
+    if (!this.active) return null;
+    if (this.nearNpc) {
+      return this.nearNpc.challenge
+        ? `⚔ Press E to battle ${this.nearNpc.name}`
+        : `Press E to talk to ${this.nearNpc.name}`;
+    }
+    return null;
+  }
+
   setPos(x: number, z: number) {
     this.player.position.x = x;
     this.player.position.z = z;
