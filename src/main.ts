@@ -85,8 +85,8 @@ world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   seen.add(speciesId); // dex: encountered
   const wild = makeCritter(speciesId, level);
-  runBattle(team, wild, (outcome, w) => {
-    if (outcome === "caught") {
+  runBattle(team, [wild], (outcome, w) => {
+    if (outcome === "caught" && w) {
       if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
       if (!caught.includes(w.species.name)) caught.push(w.species.name);
       caughtIds.add(w.species.id);
@@ -99,6 +99,31 @@ world.onEncounter = ({ speciesId, level }) => {
   });
 };
 
+// trainer battles
+const beatenTrainers = new Set<string>();
+function startTrainer(npc: { name: string; challenge?: { party: { id: string; level: number }[]; winLine: string } }) {
+  if (!npc.challenge) return;
+  const foeParty = npc.challenge.party.map((p) => makeCritter(p.id, p.level));
+  foeParty.forEach((m) => seen.add(m.species.id)); // trainer mons count as seen
+  sfx("encounter");
+  runBattle(
+    team,
+    foeParty,
+    (outcome) => {
+      if (outcome === "won") {
+        beatenTrainers.add(npc.name);
+        showToast(`🏅 ${npc.challenge!.winLine}`);
+      }
+      if (outcome === "lost") team.forEach((m) => (m.hp = m.maxHp));
+      syncDex();
+      drawHud();
+      persist();
+      world.resume();
+    },
+    { trainerName: npc.name }
+  );
+}
+
 // NPC dialog
 world.onInteract = (npc) => {
   const d = document.createElement("div");
@@ -107,10 +132,14 @@ world.onInteract = (npc) => {
   const render = () => {
     d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${npc.lines[i]}</p><div class="dialog-cont">▶ space / click${i < npc.lines.length - 1 ? "" : " to close"}</div></div>`;
   };
+  const afterDialog = () => {
+    if (npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
+    else world.resume();
+  };
   const close = () => {
     d.remove();
     window.removeEventListener("keydown", onKey);
-    world.resume();
+    afterDialog();
   };
   const advance = () => {
     i += 1;

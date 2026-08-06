@@ -16,6 +16,7 @@ export interface Npc {
   x: number;
   z: number;
   shirt: string;
+  challenge?: { party: Array<{ id: string; level: number }>; winLine: string };
 }
 
 const HEALER = { x: -10, z: 5, r: 2.6 };
@@ -48,6 +49,20 @@ const NPCS: Npc[] = [
     x: 12,
     z: -6,
     lines: ["The pond critters hit hard.", "Bring a Leaf type and you'll be fine!"],
+  },
+  {
+    name: "Ranger Bex",
+    shirt: "#c0392b",
+    x: 4,
+    z: -6,
+    lines: ["You look like a new tamer.", "Let's see what your critters can do. Battle me!"],
+    challenge: {
+      party: [
+        { id: "mothbit", level: 5 },
+        { id: "tadmite", level: 7 },
+      ],
+      winLine: "Nice moves! You've got the makings of a real tamer.",
+    },
   },
 ];
 

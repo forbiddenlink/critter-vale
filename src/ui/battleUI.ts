@@ -1,5 +1,6 @@
-// DOM battle screen with a PARTY: switch critters, faint = swap not instant loss,
-// catch adds to your team. Type effectiveness, XP + evolution.
+// DOM battle screen. Player party vs a foe side that may also be a party (trainer battles).
+// Wild battles: foe is one critter, Catch + Run allowed.
+// Trainer battles: foe is a party, no Catch/Run, foe swaps in the next critter on faint.
 import type { Critter, Move } from "../game/battle";
 import {
   moveDamage,
@@ -15,24 +16,33 @@ import { sfx } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
 
+export interface BattleOpts {
+  trainerName?: string; // presence = trainer battle (foe party, no catch/run)
+}
+
 const MAX_TEAM = 6;
 
 export function runBattle(
   party: Critter[],
-  wild: Critter,
-  onEnd: (outcome: BattleOutcome, wild: Critter) => void
+  foes: Critter[],
+  onEnd: (outcome: BattleOutcome, caught: Critter | null) => void,
+  opts: BattleOpts = {}
 ) {
+  const isTrainer = !!opts.trainerName;
   let active = party.find((m) => m.hp > 0) ?? party[0];
-  const wildMove = movesFor(wild.species.id)[0];
+  let foe = foes.find((m) => m.hp > 0) ?? foes[0];
+
+  const foeLabel = (m: Critter) =>
+    isTrainer ? `${opts.trainerName}'s ${m.species.name}` : `Wild ${m.species.name}`;
 
   const root = document.createElement("div");
   root.className = "battle";
   root.innerHTML = `
     <div class="arena">
       <div class="foe">
-        <div class="nameplate">${wild.species.name} <small>Lv${wild.level}</small> · ${wild.species.element}</div>
+        <div class="nameplate"></div>
         <div class="hpbar"><span id="foeHp"></span></div>
-        <div class="mon-wrap"><img class="mon foe-mon" id="foeMon" src="/sprites/${wild.species.id}.png" alt=""></div>
+        <div class="mon-wrap"><img class="mon foe-mon" id="foeMon" src="" alt=""></div>
       </div>
       <div class="ally">
         <div class="mon-wrap"><img class="mon ally-mon" id="allyMon" src="" alt=""></div>
@@ -40,16 +50,16 @@ export function runBattle(
         <div class="hpbar"><span id="allyHp"></span></div>
       </div>
     </div>
-    <div class="log" id="log">A wild ${wild.species.name} appeared!</div>
+    <div class="log" id="log">${isTrainer ? `${opts.trainerName} wants to battle!` : `A wild ${foe.species.name} appeared!`}</div>
     <div class="actions">
       <div class="moves">
         <button class="move" data-i="0"></button>
         <button class="move" data-i="1"></button>
       </div>
       <div class="menu">
-        <button id="catch">Catch</button>
+        <button id="catch"${isTrainer ? " hidden" : ""}>Catch</button>
         <button id="switch">Switch</button>
-        <button id="run">Run</button>
+        <button id="run"${isTrainer ? " hidden" : ""}>Run</button>
       </div>
     </div>
   `;
@@ -63,10 +73,16 @@ export function runBattle(
   const el = (sel: string) => root.querySelector(sel) as HTMLElement;
   const log = (msg: string) => (el("#log").textContent = msg);
   const drawHp = () => {
-    el("#foeHp").style.width = `${Math.max(0, (wild.hp / wild.maxHp) * 100)}%`;
+    el("#foeHp").style.width = `${Math.max(0, (foe.hp / foe.maxHp) * 100)}%`;
     el("#allyHp").style.width = `${Math.max(0, (active.hp / active.maxHp) * 100)}%`;
   };
 
+  const renderFoe = () => {
+    (el("#foeMon") as HTMLImageElement).src = `/sprites/${foe.species.id}.png`;
+    el(".foe .nameplate").innerHTML =
+      `${foe.species.name} <small>Lv${foe.level}</small> · ${foe.species.element}`;
+    drawHp();
+  };
   const renderActive = () => {
     (el("#allyMon") as HTMLImageElement).src = `/sprites/${active.species.id}.png`;
     el(".ally .nameplate").innerHTML =
@@ -78,13 +94,15 @@ export function runBattle(
     });
     drawHp();
   };
+  renderFoe();
   renderActive();
 
-  const buttons = () => root.querySelectorAll<HTMLButtonElement>(".actions button");
   const setBusy = (b: boolean) => {
-    buttons().forEach((x) => (x.disabled = b));
-    const canSwitch = party.filter((m) => m.hp > 0 && m !== active).length > 0;
-    if (!b) (el("#switch") as HTMLButtonElement).disabled = !canSwitch;
+    root.querySelectorAll<HTMLButtonElement>(".actions button").forEach((x) => (x.disabled = b));
+    if (!b) {
+      const canSwitch = party.filter((m) => m.hp > 0 && m !== active).length > 0;
+      (el("#switch") as HTMLButtonElement).disabled = !canSwitch;
+    }
   };
 
   const flash = (id: string, cls = "hit") => {
@@ -114,7 +132,7 @@ export function runBattle(
   const effLabel = (mult: number) =>
     mult > 1 ? " It's super effective!" : mult < 1 ? " It's not very effective..." : "";
 
-  const finish = (outcome: BattleOutcome) => {
+  const finish = (outcome: BattleOutcome, caught: Critter | null) => {
     setBusy(true);
     const banner = document.createElement("div");
     banner.className = "result " + outcome;
@@ -122,22 +140,24 @@ export function runBattle(
       outcome === "lost"
         ? "Your team fainted! You hurry back to Sprout Hollow."
         : outcome === "won"
-          ? "Victory!"
+          ? isTrainer
+            ? `You defeated ${opts.trainerName}!`
+            : "Victory!"
           : outcome === "caught"
-            ? `${wild.species.name} joined your team!`
+            ? `${caught?.species.name} joined your team!`
             : "Got away safely.";
     root.appendChild(banner);
     setTimeout(
       () => {
         root.remove();
-        onEnd(outcome, wild);
+        onEnd(outcome, caught);
       },
-      outcome === "lost" || outcome === "caught" ? 1500 : 1000
+      outcome === "lost" || outcome === "caught" || (outcome === "won" && isTrainer) ? 1600 : 1000
     );
   };
 
   const grantXp = (via: string) => {
-    const levels = gainXp(active, xpReward(wild));
+    const levels = gainXp(active, xpReward(foe));
     if (levels > 0) {
       el("#allyLv").textContent = `Lv${active.level}`;
       flash("allyMon", "levelup");
@@ -155,7 +175,7 @@ export function runBattle(
     }
   };
 
-  // --- switch menu ---
+  // player switch menu
   const openSwitchMenu = (forced: boolean) => {
     const menu = document.createElement("div");
     menu.className = "switch-menu";
@@ -182,8 +202,7 @@ export function runBattle(
           setBusy(false);
           return;
         }
-        const mon = options.find((m) => m.species.id === id)!;
-        active = mon;
+        active = options.find((m) => m.species.id === id)!;
         renderActive();
         log(`Go, ${active.species.name}!`);
         if (forced) setBusy(false);
@@ -192,47 +211,55 @@ export function runBattle(
     });
   };
 
-  const handleFaint = () => {
+  const playerFaint = () => {
     if (party.some((m) => m.hp > 0)) {
       sfx("hit");
       openSwitchMenu(true);
     } else {
       log(`${active.species.name} fainted!`);
-      finish("lost");
+      finish("lost", null);
+    }
+  };
+
+  const foeFaint = () => {
+    const next = foes.find((m) => m.hp > 0);
+    if (isTrainer && next) {
+      foe = next;
+      renderFoe();
+      log(`${opts.trainerName} sent out ${foe.species.name}!`);
+      setBusy(false);
+    } else {
+      grantXp(`${foeLabel(foe)} fainted!`);
+      setTimeout(() => finish("won", null), 700);
     }
   };
 
   const foeTurn = () => {
-    const dmg = moveDamage(wild, active, wildMove);
-    const mult = elementMultiplier(wildMove.element, active.species.element);
+    const move = movesFor(foe.species.id)[0]; // foe uses its STAB move
+    const dmg = moveDamage(foe, active, move);
+    const mult = elementMultiplier(move.element, active.species.element);
     active.hp = Math.max(0, active.hp - dmg);
     strike("ally", "allyMon", dmg);
     drawHp();
     if (active.hp <= 0) {
-      log(`Wild ${wild.species.name} used ${wildMove.name}!${effLabel(mult)}`);
-      setTimeout(handleFaint, 650);
+      log(`${foeLabel(foe)} used ${move.name}!${effLabel(mult)}`);
+      setTimeout(playerFaint, 650);
     } else {
-      log(`Wild ${wild.species.name} used ${wildMove.name}!${effLabel(mult)} Your move.`);
+      log(`${foeLabel(foe)} used ${move.name}!${effLabel(mult)} Your move.`);
       setBusy(false);
     }
   };
 
   const useMove = (move: Move) => {
     setBusy(true);
-    const dmg = moveDamage(active, wild, move);
-    const mult = elementMultiplier(move.element, wild.species.element);
-    wild.hp = Math.max(0, wild.hp - dmg);
+    const dmg = moveDamage(active, foe, move);
+    const mult = elementMultiplier(move.element, foe.species.element);
+    foe.hp = Math.max(0, foe.hp - dmg);
     strike("foe", "foeMon", dmg);
     drawHp();
     log(`${active.species.name} used ${move.name}!${effLabel(mult)}`);
-    if (wild.hp <= 0) {
-      setTimeout(() => {
-        grantXp(`Wild ${wild.species.name} fainted!`);
-        setTimeout(() => finish("won"), 700);
-      }, 500);
-    } else {
-      setTimeout(foeTurn, 700);
-    }
+    if (foe.hp <= 0) setTimeout(foeFaint, 550);
+    else setTimeout(foeTurn, 700);
   };
 
   root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
@@ -244,31 +271,32 @@ export function runBattle(
     openSwitchMenu(false);
   });
 
-  el("#catch").addEventListener("click", () => {
-    setBusy(true);
-    if (party.length >= MAX_TEAM) {
-      log("Your team is full! You can't catch more right now.");
-      setBusy(false);
-      return;
-    }
-    const pct = Math.round(catchChance(wild) * 100);
-    if (attemptCatch(wild)) {
-      el("#foeMon").classList.add("caught");
-      sfx("catch");
-      setTimeout(() => {
-        log(`Gotcha! ${wild.species.name} was caught! (${pct}% shot)`);
-        setTimeout(() => finish("caught"), 700);
-      }, 400);
-    } else {
-      log(`So close! ${wild.species.name} broke free (${pct}% shot).`);
-      setTimeout(foeTurn, 650);
-    }
-  });
-
-  el("#run").addEventListener("click", () => {
-    log("Got away safely.");
-    finish("ran");
-  });
+  if (!isTrainer) {
+    el("#catch").addEventListener("click", () => {
+      setBusy(true);
+      if (party.length >= MAX_TEAM) {
+        log("Your team is full! You can't catch more right now.");
+        setBusy(false);
+        return;
+      }
+      const pct = Math.round(catchChance(foe) * 100);
+      if (attemptCatch(foe)) {
+        el("#foeMon").classList.add("caught");
+        sfx("catch");
+        setTimeout(() => {
+          log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
+          setTimeout(() => finish("caught", foe), 700);
+        }, 400);
+      } else {
+        log(`So close! ${foe.species.name} broke free (${pct}% shot).`);
+        setTimeout(foeTurn, 650);
+      }
+    });
+    el("#run").addEventListener("click", () => {
+      log("Got away safely.");
+      finish("ran", null);
+    });
+  }
 
   setBusy(false);
 }
