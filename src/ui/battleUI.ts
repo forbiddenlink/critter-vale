@@ -22,6 +22,27 @@ export interface BattleOpts {
 
 const MAX_TEAM = 6;
 
+/** Neon spark burst on a successful catch. Skipped when the user prefers reduced motion. */
+function catchConfetti() {
+  if (typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const layer = document.createElement("div");
+  layer.className = "confetti";
+  const colors = ["#ff7a45", "#39c6ff", "#6be36b", "#ffe07a"];
+  for (let i = 0; i < 28; i++) {
+    const spark = document.createElement("i");
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 120 + Math.random() * 180;
+    spark.style.setProperty("--tx", `${(Math.cos(ang) * dist).toFixed(0)}px`);
+    spark.style.setProperty("--ty", `${(Math.sin(ang) * dist).toFixed(0)}px`);
+    spark.style.setProperty("--r", `${(Math.random() * 720 - 360).toFixed(0)}deg`);
+    spark.style.setProperty("--p", colors[i % colors.length]);
+    spark.style.setProperty("--d", `${(Math.random() * 0.12).toFixed(2)}s`);
+    layer.appendChild(spark);
+  }
+  document.body.appendChild(layer);
+  setTimeout(() => layer.remove(), 1300);
+}
+
 export function runBattle(
   party: Critter[],
   foes: Critter[],
@@ -283,6 +304,7 @@ export function runBattle(
       if (attemptCatch(foe)) {
         el("#foeMon").classList.add("caught");
         sfx("catch");
+        catchConfetti();
         setTimeout(() => {
           log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
           setTimeout(() => finish("caught", foe), 700);

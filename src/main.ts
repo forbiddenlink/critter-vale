@@ -2,14 +2,15 @@ import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
-import { Overworld } from "./world/overworld";
+import { Overworld, BLOOM_LAYER } from "./world/overworld";
 import { makeCritter } from "./game/battle";
 import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
-import { openDex } from "./ui/dex";
+import { openDex, attachHolo } from "./ui/dex";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
@@ -29,12 +30,72 @@ app.appendChild(renderer.domElement);
 const world = new Overworld(window.innerWidth / window.innerHeight);
 world.active = false; // frozen until a starter is chosen
 
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(world.scene, world.camera));
-composer.addPass(
-  new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.7, 0.85)
+// --- selective bloom: only emissive "lantern" heroes on BLOOM_LAYER glow ---
+// Everything else is temporarily painted black for the bloom pass, then restored.
+const bloomLayer = new THREE.Layers();
+bloomLayer.set(BLOOM_LAYER);
+const darkMat = new THREE.MeshBasicMaterial({ color: 0x000000, fog: false });
+const matCache = new Map<string, THREE.Material | THREE.Material[]>();
+const spriteVis = new Map<string, boolean>();
+
+function darkenNonBloom(obj: THREE.Object3D) {
+  const asMesh = obj as THREE.Mesh;
+  const asSprite = obj as THREE.Sprite;
+  if (asMesh.isMesh && !bloomLayer.test(obj.layers)) {
+    matCache.set(obj.uuid, asMesh.material);
+    asMesh.material = darkMat;
+  } else if (asSprite.isSprite && !bloomLayer.test(obj.layers)) {
+    // sprites can't take the mesh dark material; hide them for the bloom pass
+    spriteVis.set(obj.uuid, asSprite.visible);
+    asSprite.visible = false;
+  }
+}
+function restoreMaterial(obj: THREE.Object3D) {
+  const cached = matCache.get(obj.uuid);
+  if (cached) {
+    (obj as THREE.Mesh).material = cached;
+    matCache.delete(obj.uuid);
+  }
+  if (spriteVis.has(obj.uuid)) {
+    (obj as THREE.Sprite).visible = spriteVis.get(obj.uuid)!;
+    spriteVis.delete(obj.uuid);
+  }
+}
+
+const renderPass = new RenderPass(world.scene, world.camera);
+
+const bloomComposer = new EffectComposer(renderer);
+bloomComposer.renderToScreen = false;
+bloomComposer.addPass(renderPass);
+bloomComposer.addPass(
+  new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.9, 0.55, 0.0)
 );
+
+const mixPass = new ShaderPass(
+  new THREE.ShaderMaterial({
+    uniforms: {
+      baseTexture: { value: null },
+      bloomTexture: { value: bloomComposer.renderTarget2.texture },
+    },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform sampler2D baseTexture; uniform sampler2D bloomTexture; varying vec2 vUv;
+      void main(){ gl_FragColor = texture2D(baseTexture, vUv) + vec4(1.0) * texture2D(bloomTexture, vUv); }`,
+  }),
+  "baseTexture"
+);
+mixPass.needsSwap = true;
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderPass);
+composer.addPass(mixPass);
 composer.addPass(new OutputPass());
+
+function renderScene() {
+  world.scene.traverse(darkenNonBloom);
+  bloomComposer.render();
+  world.scene.traverse(restoreMaterial);
+  composer.render();
+}
 
 // --- player state ---
 const team: Critter[] = [];
@@ -246,7 +307,7 @@ function showTitle() {
       <div class="starters">
         ${STARTERS.map((id) => {
           const s = SPECIES[id];
-          return `<button class="starter" data-id="${id}" style="--c:${s.color}">
+          return `<button class="starter holo" data-id="${id}" style="--c:${s.color}">
             <img src="/sprites/${id}.png" alt="">
             <span class="s-name">${s.name}</span>
             <span class="s-el">${s.element}</span>
@@ -256,6 +317,7 @@ function showTitle() {
       <p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p>
     </div>`;
   document.body.appendChild(title);
+  attachHolo(title.querySelector(".starters") as HTMLElement);
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -293,7 +355,7 @@ function loop(now: number) {
   } else {
     prompt.classList.remove("show");
   }
-  composer.render();
+  renderScene();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
@@ -302,6 +364,7 @@ window.addEventListener("resize", () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
   renderer.setSize(w, h);
+  bloomComposer.setSize(w, h);
   composer.setSize(w, h);
   world.onResize(w / h);
 });

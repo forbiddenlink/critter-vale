@@ -5,6 +5,9 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
 import { WILD_POOL } from "../game/critters";
 
+/** Scene layer that the selective-bloom pass treats as "glowing" (lanterns / emissive heroes). */
+export const BLOOM_LAYER = 1;
+
 export interface Encounter {
   speciesId: string;
   level: number;
@@ -90,6 +93,16 @@ export class Overworld {
   private inHealer = false;
   active = true;
 
+  // raycaster hover-glow + camera parallax
+  private npcSprites: THREE.Sprite[] = [];
+  private readonly npcBaseScale = 2.1;
+  private raycaster = new THREE.Raycaster();
+  private pointerNdc = new THREE.Vector2(-2, -2); // offscreen until the mouse moves
+  private pointer = new THREE.Vector2(0, 0); // normalized -1..1 for parallax
+  private sway = new THREE.Vector2(0, 0);
+  private reducedMotion =
+    typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
   constructor(aspect: number) {
     this.camera = new THREE.PerspectiveCamera(52, aspect, 0.1, 400);
 
@@ -111,6 +124,10 @@ export class Overworld {
       if (k === "e" || k === " ") this.interact();
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+    window.addEventListener("pointermove", (e) => {
+      this.pointerNdc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+      this.pointer.set(this.pointerNdc.x, this.pointerNdc.y);
+    });
   }
 
   private buildNpcs() {
@@ -118,6 +135,7 @@ export class Overworld {
       const s = makeNpcSprite(npc.shirt);
       s.position.set(npc.x, 1.05, npc.z);
       this.scene.add(s);
+      this.npcSprites.push(s);
     }
   }
 
@@ -134,6 +152,7 @@ export class Overworld {
     );
     pad.position.set(HEALER.x, 0.1, HEALER.z);
     pad.receiveShadow = true;
+    pad.layers.enable(BLOOM_LAYER);
     this.scene.add(pad);
     const crossMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
@@ -142,9 +161,11 @@ export class Overworld {
     });
     const bar = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.5), crossMat);
     bar.position.set(HEALER.x, 0.22, HEALER.z);
+    bar.layers.enable(BLOOM_LAYER);
     this.scene.add(bar);
     const bar2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 1.6), crossMat);
     bar2.position.set(HEALER.x, 0.22, HEALER.z);
+    bar2.layers.enable(BLOOM_LAYER);
     this.scene.add(bar2);
   }
 
@@ -355,6 +376,7 @@ export class Overworld {
       for (const dx of [-1.4, 1.4]) {
         const win = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.2), winMat);
         win.position.set(x + dx, 2.6, z + 2.75);
+        win.layers.enable(BLOOM_LAYER);
         this.scene.add(win);
       }
     }
@@ -415,9 +437,19 @@ export class Overworld {
       this.player.position.y = 0.95 + Math.abs(Math.sin(this.elapsed * 10)) * 0.12;
     }
 
+    // camera parallax: gentle sway toward the pointer while standing still
+    const idle = !moving && !this.reducedMotion;
+    const tx = idle ? this.pointer.x * 1.7 : 0;
+    const ty = idle ? -this.pointer.y * 1.0 : 0;
+    const k = Math.min(1, dt * 3);
+    this.sway.x += (tx - this.sway.x) * k;
+    this.sway.y += (ty - this.sway.y) * k;
+
     const p = this.player.position;
-    this.camera.position.set(p.x, p.y + 15, p.z + 17);
+    this.camera.position.set(p.x + this.sway.x, p.y + 15 + this.sway.y, p.z + 17);
     this.camera.lookAt(p.x, p.y, p.z - 2);
+
+    this.updateNpcHover(dt);
 
     // nearest NPC in talk range
     this.nearNpc = null;
@@ -437,6 +469,25 @@ export class Overworld {
     if (moving && this.inGrass(p.x, p.z) && this.stepCooldown === 0) {
       this.stepCooldown = 0.35;
       if (Math.random() < 0.16) this.triggerEncounter();
+    }
+  }
+
+  /** Raycast the pointer against NPC billboards; pulse-scale + warm-glow the one under the cursor. */
+  private updateNpcHover(dt: number) {
+    this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+    const hit = this.raycaster.intersectObjects(this.npcSprites, false)[0]?.object ?? null;
+    const k = Math.min(1, dt * 10);
+    for (const s of this.npcSprites) {
+      const isHover = s === hit;
+      // pulse only when reduced-motion is off; otherwise a steady lift
+      const pulse = isHover && !this.reducedMotion ? Math.sin(this.elapsed * 6) * 0.5 + 0.5 : isHover ? 1 : 0;
+      const target = this.npcBaseScale * (1 + (isHover ? 0.1 + pulse * 0.04 : 0));
+      const ns = s.scale.x + (target - s.scale.x) * k;
+      s.scale.set(ns, ns, 1);
+      // sprites have no emissive channel; fake the glow by pushing color >1 (ACES tone-maps it warm)
+      const mat = s.material as THREE.SpriteMaterial;
+      const f = mat.color.r + ((isHover ? 1.6 : 1) - mat.color.r) * k;
+      mat.color.setRGB(f, f * 0.94 + 0.06, f * 0.85 + 0.15);
     }
   }
 

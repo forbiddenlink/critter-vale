@@ -1,6 +1,32 @@
 // Critter-Dex: a collection screen over all species, showing caught / seen / unknown.
 import { SPECIES } from "../game/critters";
 
+/**
+ * Cursor-tracked holo-foil shimmer for `.holo` cards inside `scope`.
+ * Sets CSS custom props (--mx/--my for the shimmer hotspot, --rx/--ry for tilt).
+ * One delegated pointer listener per scope (simeydotme pokemon-cards technique).
+ */
+export function attachHolo(scope: HTMLElement, selector = ".holo") {
+  const TILT = 9; // max degrees
+  scope.addEventListener("pointermove", (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>(selector);
+    if (!card || !scope.contains(card)) return;
+    const r = card.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width; // 0..1
+    const py = (e.clientY - r.top) / r.height; // 0..1
+    card.style.setProperty("--mx", `${(px * 100).toFixed(1)}%`);
+    card.style.setProperty("--my", `${(py * 100).toFixed(1)}%`);
+    card.style.setProperty("--rx", `${((px - 0.5) * 2 * TILT).toFixed(2)}deg`);
+    card.style.setProperty("--ry", `${((0.5 - py) * 2 * TILT).toFixed(2)}deg`);
+  });
+  scope.addEventListener("pointerout", (e) => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>(selector);
+    if (!card) return;
+    card.style.setProperty("--rx", "0deg");
+    card.style.setProperty("--ry", "0deg");
+  });
+}
+
 // Display order: base trio, their evolutions, then the extra wilds.
 const DEX_ORDER = [
   "emberpup",
@@ -32,12 +58,13 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
           const isCaught = caught.has(id);
           const isSeen = seen.has(id);
           const state = isCaught ? "caught" : isSeen ? "seen" : "unknown";
+          const holo = isCaught ? " holo" : "";
           const name = isCaught || isSeen ? s.name : "???";
           const el = isCaught ? s.element : isSeen ? "seen" : "—";
           const stats = isCaught
             ? `<div class="dex-stats">HP ${s.baseHp} · ATK ${s.baseAtk} · DEF ${s.baseDef}</div>`
             : "";
-          return `<div class="dex-cell ${state}" style="--c:${s.color}">
+          return `<div class="dex-cell ${state}${holo}" style="--c:${s.color}">
             ${
               isCaught || isSeen
                 ? `<img src="/sprites/${id}.png" alt="">`
@@ -52,6 +79,7 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
       <div class="dex-hint">Catch wild critters in the tall grass to fill your Dex.</div>
     </div>`;
   document.body.appendChild(root);
+  attachHolo(root.querySelector(".dex-grid") as HTMLElement);
 
   const close = () => {
     root.remove();
