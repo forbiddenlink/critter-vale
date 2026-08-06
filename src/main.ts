@@ -9,6 +9,7 @@ import { makeCritter } from "./game/battle";
 import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
+import { openDex } from "./ui/dex";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
@@ -38,6 +39,15 @@ composer.addPass(new OutputPass());
 // --- player state ---
 const team: Critter[] = [];
 const caught: string[] = [];
+const seen = new Set<string>(); // species ids encountered (dex)
+const caughtIds = new Set<string>(); // species ids ever owned (dex)
+
+function syncDex() {
+  for (const m of team) {
+    seen.add(m.species.id);
+    caughtIds.add(m.species.id);
+  }
+}
 
 const MAX_TEAM = 6;
 
@@ -57,7 +67,7 @@ function drawHud() {
   if (!team.length) return;
   hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow<br>Team: ${team
     .map((m) => `${m.species.name} Lv${m.level} (${m.hp}/${m.maxHp} HP)`)
-    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · tall grass = wild critters · E to talk · green pad = heal</small>`;
+    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · grass = wild critters · E talk · green pad heals · C = Dex</small>`;
 }
 
 function persist() {
@@ -66,18 +76,23 @@ function persist() {
     team: team.map((m) => ({ id: m.species.id, level: m.level, xp: m.xp, hp: m.hp })),
     caught,
     pos: world.getPos(),
+    seen: [...seen],
+    caughtIds: [...caughtIds],
   });
 }
 
 world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
+  seen.add(speciesId); // dex: encountered
   const wild = makeCritter(speciesId, level);
   runBattle(team, wild, (outcome, w) => {
     if (outcome === "caught") {
       if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
       if (!caught.includes(w.species.name)) caught.push(w.species.name);
+      caughtIds.add(w.species.id);
     }
     if (outcome === "lost") team.forEach((m) => (m.hp = m.maxHp)); // whole team recovers in town
+    syncDex(); // picks up evolutions + owned species
     drawHud(); // reflect XP / level-ups + catches
     persist();
     world.resume();
@@ -153,6 +168,18 @@ reset.addEventListener("click", () => {
 });
 document.body.appendChild(reset);
 
+const dexBtn = document.createElement("button");
+dexBtn.className = "mute dexbtn";
+dexBtn.textContent = "📖";
+dexBtn.title = "Critter-Dex (C)";
+dexBtn.addEventListener("click", () => openDex(seen, caughtIds));
+document.body.appendChild(dexBtn);
+window.addEventListener("keydown", (e) => {
+  if (e.key.toLowerCase() === "c" && team.length && !document.querySelector(".battle, .dialog, .title")) {
+    openDex(seen, caughtIds);
+  }
+});
+
 function armMusicOnGesture() {
   const start = () => {
     startMusic();
@@ -170,6 +197,9 @@ function resumeFromSave(s: SaveData) {
     if (typeof c.hp === "number") m.hp = Math.max(1, Math.min(m.maxHp, c.hp));
     team.push(m);
   }
+  (s.seen ?? []).forEach((id) => seen.add(id));
+  (s.caughtIds ?? []).forEach((id) => caughtIds.add(id));
+  syncDex();
   world.setPos(s.pos.x, s.pos.z);
   world.resume();
   drawHud();
@@ -201,6 +231,7 @@ function showTitle() {
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
       team.push(makeCritter(btn.dataset.id!, 6));
+      syncDex();
       startMusic();
       sfx("levelup");
       title.classList.add("fade");

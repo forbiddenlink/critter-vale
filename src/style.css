@@ -34,6 +34,69 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: #14202b; }
 }
 .mute:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
 .reset { right: 64px; font-size: 22px; }
+.dexbtn { right: 116px; font-size: 20px; }
+
+/* critter-dex */
+.dex {
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 32, 43, 0.72);
+  backdrop-filter: blur(3px);
+}
+.dex-panel {
+  width: min(920px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.97);
+  border: 3px solid #14202b;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  padding: 18px 20px 22px;
+}
+.dex-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.dex-head h2 { font-size: 26px; font-weight: 900; color: #14202b; }
+.dex-count {
+  font-weight: 800;
+  color: #fff;
+  background: #2b6cff;
+  border: 2px solid #14202b;
+  border-radius: 999px;
+  padding: 3px 14px;
+}
+.dex-close {
+  margin-left: auto;
+  width: 38px;
+  height: 38px;
+  font-size: 18px;
+  font-weight: 900;
+  background: #c0392b;
+  color: #fff;
+  border: 2px solid #14202b;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.dex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.dex-cell {
+  border: 3px solid #14202b;
+  border-top: 8px solid var(--c);
+  border-radius: 14px;
+  padding: 10px 8px 12px;
+  text-align: center;
+  background: #fff;
+}
+.dex-cell img { width: 96px; height: 96px; object-fit: contain; }
+.dex-cell.seen img { filter: brightness(0) opacity(0.55); }
+.dex-cell.unknown { border-top-color: #9aa; background: #f2f4f6; }
+.dex-q { width: 96px; height: 96px; margin: 0 auto; font-size: 60px; font-weight: 900; color: #c3cad2; line-height: 96px; }
+.dex-name { font-weight: 900; color: #14202b; margin-top: 4px; }
+.dex-el { font-size: 12px; font-weight: 700; color: #678; text-transform: capitalize; }
+.dex-stats { font-size: 11px; font-weight: 700; color: #567; margin-top: 4px; }
+.dex-hint { text-align: center; color: #678; font-size: 13px; font-weight: 600; margin-top: 14px; }
 
 /* transient toast (healing, etc.) */
 .toast {

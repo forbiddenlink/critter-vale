@@ -7,8 +7,10 @@ export interface SavedCritter {
 }
 export interface SaveData {
   team: SavedCritter[];
-  caught: string[];
+  caught: string[]; // caught names (HUD)
   pos: { x: number; z: number };
+  seen?: string[]; // species ids encountered (dex)
+  caughtIds?: string[]; // species ids ever caught/owned (dex)
 }
 
 const KEY = "critter-vale-save-v1";
