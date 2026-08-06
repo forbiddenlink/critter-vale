@@ -108,10 +108,7 @@ export class Overworld {
     window.addEventListener("keydown", (e) => {
       const k = e.key.toLowerCase();
       this.keys.add(k);
-      if ((k === "e" || k === " ") && this.active && this.nearNpc) {
-        this.active = false;
-        this.onInteract?.(this.nearNpc);
-      }
+      if (k === "e" || k === " ") this.interact();
     });
     window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
   }
@@ -458,6 +455,14 @@ export class Overworld {
 
   getPos(): { x: number; z: number } {
     return { x: this.player.position.x, z: this.player.position.z };
+  }
+
+  /** Trigger the nearby interaction (talk / battle). Safe to call from a click or key. */
+  interact() {
+    if (this.active && this.nearNpc) {
+      this.active = false;
+      this.onInteract?.(this.nearNpc);
+    }
   }
 
   /** Contextual action hint for the HUD, or null when there's nothing to interact with. */

@@ -278,6 +278,7 @@ else showTitle();
 
 const prompt = document.createElement("div");
 prompt.className = "prompt";
+prompt.addEventListener("click", () => world.interact());
 document.body.appendChild(prompt);
 
 let last = performance.now();
