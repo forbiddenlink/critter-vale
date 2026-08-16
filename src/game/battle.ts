@@ -1,6 +1,9 @@
 // Pure battle logic for Critter Vale. Deterministic, unit-tested.
+// (Damage/XP math is quirk-free on purpose; quirk modifiers live in the battle UI layer.)
 import type { Element, Species } from "./critters";
 import { SPECIES } from "./critters";
+import { rollQuirk } from "./traits";
+import type { QuirkId } from "./traits";
 
 export interface Critter {
   species: Species;
@@ -10,6 +13,7 @@ export interface Critter {
   atk: number;
   def: number;
   xp: number;
+  quirk: QuirkId; // per-individual passive trait (see traits.ts)
 }
 
 /** Element triangle: Ember > Leaf > Aqua > Ember. 2x advantage, 0.5x disadvantage, else 1x.
@@ -32,7 +36,7 @@ function statAt(base: number, level: number): number {
   return Math.floor(base + (base * (level - 1)) / 12);
 }
 
-export function makeCritter(speciesId: string, level: number): Critter {
+export function makeCritter(speciesId: string, level: number, quirk?: QuirkId): Critter {
   const species = SPECIES[speciesId];
   if (!species) throw new Error(`unknown species: ${speciesId}`);
   const maxHp = statAt(species.baseHp, level) + level * 4;
@@ -44,6 +48,7 @@ export function makeCritter(speciesId: string, level: number): Critter {
     atk: statAt(species.baseAtk, level),
     def: statAt(species.baseDef, level),
     xp: 0,
+    quirk: quirk ?? rollQuirk(), // each individual rolls its own trait unless one is given
   };
 }
 

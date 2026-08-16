@@ -1,12 +1,14 @@
 // localStorage persistence: team, caught critters, player position.
 import type { CustomSpecies } from "./customSpecies";
 import type { Bag } from "./items";
+import type { QuirkId } from "./traits";
 
 export interface SavedCritter {
   id: string;
   level: number;
   xp: number;
   hp: number;
+  quirk?: QuirkId; // per-individual trait (optional for pre-quirk saves)
 }
 export interface SaveData {
   team: SavedCritter[];

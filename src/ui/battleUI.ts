@@ -15,6 +15,7 @@ import {
 import { spriteUrl } from "../game/customSpecies";
 import { ITEMS, consume, bagCount } from "../game/items";
 import type { Bag, ItemId } from "../game/items";
+import { quirkDef } from "../game/traits";
 import { sfx } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
@@ -105,14 +106,16 @@ export function runBattle(
 
   const renderFoe = () => {
     (el("#foeMon") as HTMLImageElement).src = spriteUrl(foe.species.id);
+    const fq = quirkDef(foe.quirk);
     el(".foe .nameplate").innerHTML =
-      `${foe.species.name} <small>Lv${foe.level}</small> · ${foe.species.element}`;
+      `${foe.species.name} <small>Lv${foe.level}</small> · ${foe.species.element}${fq.emoji ? ` <span title="${fq.name}: ${fq.desc}">${fq.emoji}</span>` : ""}`;
     drawHp();
   };
   const renderActive = () => {
     (el("#allyMon") as HTMLImageElement).src = spriteUrl(active.species.id);
+    const aq = quirkDef(active.quirk);
     el(".ally .nameplate").innerHTML =
-      `${active.species.name} <small id="allyLv">Lv${active.level}</small> · ${active.species.element}`;
+      `${active.species.name} <small id="allyLv">Lv${active.level}</small> · ${active.species.element}${aq.emoji ? ` <span title="${aq.name}: ${aq.desc}">${aq.emoji}</span>` : ""}`;
     const moves = movesFor(active.species.id);
     root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
       const m = moves[Number(btn.dataset.i)];
@@ -158,6 +161,23 @@ export function runBattle(
   const effLabel = (mult: number) =>
     mult > 1 ? " It's super effective!" : mult < 1 ? " It's not very effective..." : "";
 
+  // Quirk modifiers (per-individual traits). Pure battle math stays in battle.ts; this
+  // is the battle-layer that reads quirks and adjusts the final numbers.
+  const adjustDamage = (attacker: Critter, defender: Critter, raw: number) => {
+    const a = quirkDef(attacker.quirk);
+    const d = quirkDef(defender.quirk);
+    const dmg = Math.max(1, Math.round(raw * a.dealtMult * d.takenMult - d.takenFlat));
+    const recoil = d.recoilFrac > 0 ? Math.max(1, Math.round(dmg * d.recoilFrac)) : 0; // thornskin
+    return { dmg, recoil };
+  };
+  const endTurnHeal = (c: Critter) => {
+    const q = quirkDef(c.quirk);
+    if (q.healFrac > 0 && c.hp > 0 && c.hp < c.maxHp) {
+      c.hp = Math.min(c.maxHp, c.hp + Math.max(1, Math.round(c.maxHp * q.healFrac)));
+      drawHp();
+    }
+  };
+
   const finish = (outcome: BattleOutcome, caught: Critter | null) => {
     setBusy(true);
     const banner = document.createElement("div");
@@ -183,7 +203,7 @@ export function runBattle(
   };
 
   const grantXp = (via: string) => {
-    const levels = gainXp(active, xpReward(foe));
+    const levels = gainXp(active, Math.round(xpReward(foe) * quirkDef(active.quirk).xpMult));
     if (levels > 0) {
       el("#allyLv").textContent = `Lv${active.level}`;
       flash("allyMon", "levelup");
@@ -262,14 +282,19 @@ export function runBattle(
 
   const foeTurn = () => {
     const move = movesFor(foe.species.id)[0]; // foe uses its STAB move
-    const dmg = moveDamage(foe, active, move);
+    const { dmg, recoil } = adjustDamage(foe, active, moveDamage(foe, active, move));
     const mult = elementMultiplier(move.element, active.species.element);
     active.hp = Math.max(0, active.hp - dmg);
     strike("ally", "allyMon", dmg);
+    if (recoil > 0 && foe.hp > 0) foe.hp = Math.max(0, foe.hp - recoil); // thornskin bites back
+    endTurnHeal(foe);
     drawHp();
     if (active.hp <= 0) {
       log(`${foeLabel(foe)} used ${move.name}!${effLabel(mult)}`);
       setTimeout(playerFaint, 650);
+    } else if (foe.hp <= 0) {
+      log(`${foeLabel(foe)} used ${move.name}, but recoil took it down!`);
+      setTimeout(foeFaint, 650);
     } else {
       log(`${foeLabel(foe)} used ${move.name}!${effLabel(mult)} Your move.`);
       setBusy(false);
@@ -278,13 +303,16 @@ export function runBattle(
 
   const useMove = (move: Move) => {
     setBusy(true);
-    const dmg = moveDamage(active, foe, move);
+    const { dmg, recoil } = adjustDamage(active, foe, moveDamage(active, foe, move));
     const mult = elementMultiplier(move.element, foe.species.element);
     foe.hp = Math.max(0, foe.hp - dmg);
     strike("foe", "foeMon", dmg);
-    drawHp();
     log(`${active.species.name} used ${move.name}!${effLabel(mult)}`);
+    if (recoil > 0 && active.hp > 0) active.hp = Math.max(0, active.hp - recoil); // foe's thornskin
+    endTurnHeal(active);
+    drawHp();
     if (foe.hp <= 0) setTimeout(foeFaint, 550);
+    else if (active.hp <= 0) setTimeout(playerFaint, 650); // died to recoil
     else setTimeout(foeTurn, 700);
   };
 

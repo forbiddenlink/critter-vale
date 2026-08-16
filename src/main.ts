@@ -142,7 +142,7 @@ function drawHud() {
 function persist() {
   if (!team.length) return;
   writeSave({
-    team: team.map((m) => ({ id: m.species.id, level: m.level, xp: m.xp, hp: m.hp })),
+    team: team.map((m) => ({ id: m.species.id, level: m.level, xp: m.xp, hp: m.hp, quirk: m.quirk })),
     caught,
     pos: world.getPos(),
     seen: [...seen],
@@ -487,7 +487,7 @@ function resumeFromSave(s: SaveData) {
     customOwned.push(c);
   }
   for (const c of s.team) {
-    const m = makeCritter(c.id, c.level);
+    const m = makeCritter(c.id, c.level, c.quirk);
     m.xp = c.xp;
     if (typeof c.hp === "number") m.hp = Math.max(1, Math.min(m.maxHp, c.hp));
     team.push(m);
