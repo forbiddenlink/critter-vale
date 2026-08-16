@@ -61,11 +61,13 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const runId = req.query.runId;
-      if (!runId || typeof runId !== "string") {
-        res.status(400).json({ error: "missing runId" });
+      // Strict allowlist: runIds are UUID-shaped. Reject anything else so a crafted
+      // value can't path-traverse to other authenticated Magica endpoints via our key.
+      if (typeof runId !== "string" || !/^[a-zA-Z0-9-]{16,64}$/.test(runId)) {
+        res.status(400).json({ error: "bad runId" });
         return;
       }
-      const r = await fetch(`${BASE}/nodes/runs/${runId}`, { headers: magicaHeaders(key) });
+      const r = await fetch(`${BASE}/nodes/runs/${encodeURIComponent(runId)}`, { headers: magicaHeaders(key) });
       if (!r.ok) throw new Error(`getRun ${r.status}`);
       const run = await r.json();
       if (DONE_EXCLUDES.has(run.status)) {
