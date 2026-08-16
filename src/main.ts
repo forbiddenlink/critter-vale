@@ -12,6 +12,7 @@ import { SPECIES, STARTERS } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
 import { openSummonLab } from "./ui/summonLab";
+import { openFusionLab } from "./ui/fusionLab";
 import { registerCustom } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
@@ -334,6 +335,27 @@ function restAtHome() {
   sfx("levelup");
 }
 
+const FUSION_COST = 80; // Sprigs to fuse two critters into a hybrid
+
+function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
+  sprigs -= FUSION_COST;
+  registerCustom(spec);
+  customOwned.push(spec);
+  const level = Math.max(a.level, b.level);
+  for (const parent of [a, b]) {
+    const i = team.indexOf(parent);
+    if (i >= 0) team.splice(i, 1); // the two parents merge into the hybrid
+  }
+  team.push(makeCritter(spec.id, level, a.quirk)); // hybrid inherits parent A's quirk
+  seen.add(spec.id);
+  caughtIds.add(spec.id);
+  if (!caught.includes(spec.name)) caught.push(spec.name);
+  drawHud();
+  persist();
+  showToast(`🌀 ${spec.name} was born from the Wellspring!`);
+  sfx("levelup");
+}
+
 function onSummoned(spec: CustomSpecies) {
   registerCustom(spec); // add to SPECIES / MOVESETS / sprite registry so the game can use it
   customOwned.push(spec);
@@ -366,8 +388,8 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
     body = "Home sweet home. A cozy bed and a warm hearth. Resting here restores your whole team.";
     extra = `<button class="io-btn io-primary" data-act="rest">😴 Rest &amp; Save</button>`;
   } else if (b.kind === "lab") {
-    body = "Prof. Hollis's research lab hums with strange energy. Describe a critter and the lab will summon it into being.";
-    extra = `<button class="io-btn io-primary" data-act="summon">✨ Summon a Critter</button>`;
+    body = "Prof. Hollis's research lab hums with strange energy. Summon a new critter from the Wellspring, or fuse two of yours into a hybrid.";
+    extra = `<button class="io-btn io-primary" data-act="summon">✨ Summon a Critter</button><button class="io-btn io-primary" data-act="fuse">🌀 Fuse Critters</button>`;
   } else {
     body = 'The Trading Post. Racks of berries and gear line the walls. "Nothing new in stock today, tamer!"';
   }
@@ -394,6 +416,9 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
       } else if (act === "summon") {
         close();
         openSummonLab(onSummoned);
+      } else if (act === "fuse") {
+        close();
+        openFusionLab({ party: team, sprigs, cost: FUSION_COST, onFused });
       } else {
         close(); // leave
       }

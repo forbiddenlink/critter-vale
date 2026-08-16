@@ -3,6 +3,7 @@
 import type { Element } from "../game/critters";
 import { customId, rollCustom } from "../game/customSpecies";
 import type { CustomSpecies } from "../game/customSpecies";
+import { generateCritter } from "./summonApi";
 
 const ELEMENTS: Element[] = ["Ember", "Aqua", "Leaf"];
 const STATUS_LINES = [
@@ -12,30 +13,6 @@ const STATUS_LINES = [
   "Almost there...",
   "Adding the finishing spark...",
 ];
-
-async function poll(runId: string, cancelled: () => boolean, timeoutMs = 180_000): Promise<string[]> {
-  const deadline = Date.now() + timeoutMs;
-  for (;;) {
-    if (cancelled()) throw new Error("cancelled");
-    const r = await fetch(`/api/summon?runId=${encodeURIComponent(runId)}`);
-    const data = await r.json();
-    if (data.status === "done") return data.result ?? [];
-    if (data.status === "failed") throw new Error("generation failed");
-    if (Date.now() > deadline) throw new Error("timed out");
-    await new Promise((res) => setTimeout(res, 3000));
-  }
-}
-
-async function startOp(body: Record<string, unknown>): Promise<string> {
-  const r = await fetch("/api/summon", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error ?? "request failed");
-  return data.runId;
-}
 
 export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
   if (document.querySelector(".summon")) return;
@@ -150,15 +127,11 @@ export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
     cancelled = false;
     const stopStatus = renderLoading();
     try {
-      const genRun = await startOp({ op: "gen", description, element });
-      const [raw] = await poll(genRun, () => cancelled);
-      if (!raw) throw new Error("no image");
-      const bgRun = await startOp({ op: "bg", imageUrl: raw });
-      const [clean] = await poll(bgRun, () => cancelled);
+      const clean = await generateCritter(description, element, () => cancelled);
       stopStatus();
       if (cancelled) return;
       const id = customId(name);
-      const spec = rollCustom(id, name, element, clean ?? raw);
+      const spec = rollCustom(id, name, element, clean);
       renderPreview(spec);
     } catch (err) {
       stopStatus();

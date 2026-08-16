@@ -3,7 +3,7 @@
 import { SPECIES } from "./critters";
 import type { Species, Element } from "./critters";
 import { MOVESETS } from "./battle";
-import type { Move } from "./battle";
+import type { Move, Critter } from "./battle";
 
 // --- sprite URL resolver (custom critters load from a remote URL, not /sprites) ---
 const spriteUrls = new Map<string, string>();
@@ -65,6 +65,43 @@ export function rollCustom(id: string, name: string, element: Element, imageUrl:
     baseHp: r(22, 28),
     baseAtk: r(9, 13),
     baseDef: r(8, 12),
+    catchRate: 1,
+    color: pal.color,
+    accent: pal.accent,
+    imageUrl,
+    moves: [stab, filler],
+  };
+}
+
+/** Blend two critters' names: front half of one + back half of the other. */
+function fuseName(a: string, b: string): string {
+  const clean = (s: string) => s.replace(/[^\p{L}]/gu, "");
+  const A = clean(a);
+  const B = clean(b);
+  const blended = A.slice(0, Math.ceil(A.length / 2)) + B.slice(Math.floor(B.length / 2));
+  return (blended || "Hybrid").slice(0, 16);
+}
+
+/** Fuse two critters into a hybrid species (Wellspring Fusion). Parent A's element dominates;
+ *  base stats are the averaged pair with a small synergy bonus. Sprite comes from the AI gen. */
+export function fuseSpecies(a: Critter, b: Critter, imageUrl: string): CustomSpecies {
+  const element = a.species.element; // parent A is dominant
+  const pal = ELEMENT_PALETTE[element];
+  const blend = (x: number, y: number) => Math.max(1, Math.round(((x + y) / 2) * 1.1));
+  const name = fuseName(a.species.name, b.species.name);
+  const stab: Move = {
+    name: element === "Ember" ? "Ember Burst" : element === "Aqua" ? "Aqua Burst" : "Leaf Burst",
+    power: 32,
+    element,
+  };
+  const filler: Move = { name: "Tackle", power: 24, element: "Normal" };
+  return {
+    id: customId(name),
+    name,
+    element,
+    baseHp: blend(a.species.baseHp, b.species.baseHp),
+    baseAtk: blend(a.species.baseAtk, b.species.baseAtk),
+    baseDef: blend(a.species.baseDef, b.species.baseDef),
     catchRate: 1,
     color: pal.color,
     accent: pal.accent,

@@ -670,6 +670,51 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 /* battle bag menu (reuses .switch-menu) */
 .bag-emoji { font-size: 30px; width: 46px; text-align: center; }
 
+/* wellspring fusion picker */
+.fusion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.fusion-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid var(--glass-line);
+  border-radius: 12px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+.fusion-cell.on {
+  border-color: #a66bff;
+  box-shadow: 0 0 16px rgba(166, 107, 255, 0.6);
+}
+.fusion-cell:active { transform: translateY(2px); }
+.fusion-cell img { width: 56px; height: 56px; object-fit: contain; }
+.fusion-cell span { font-size: 12px; font-weight: 700; text-align: center; }
+.fusion-cell small { color: var(--ink-dim); }
+.fusion-tag {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: #06131f;
+  background: #a66bff;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
 /* whiteout / faint screen */
 .faint {
   position: fixed;
