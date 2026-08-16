@@ -4,6 +4,7 @@ import { Sky } from "three/addons/objects/Sky.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
 import { WILD_POOL } from "../game/critters";
+import type { Element } from "../game/critters";
 
 /** Scene layer that the selective-bloom pass treats as "glowing" (lanterns / emissive heroes). */
 export const BLOOM_LAYER = 1;
@@ -20,6 +21,9 @@ export interface Npc {
   z: number;
   shirt: string;
   challenge?: { party: Array<{ id: string; level: number }>; winLine: string };
+  // A Warden guards a route with an enforced trial; beating them earns a Crest.
+  warden?: { crest: Element; trial: string; restrict: { noSwitch?: boolean; noItems?: boolean } };
+  champion?: boolean; // the final battle; only fightable once all Crests are held
 }
 
 const HEALER = { x: -10, z: 5, r: 2.6 };
@@ -65,6 +69,87 @@ const NPCS: Npc[] = [
         { id: "tadmite", level: 7 },
       ],
       winLine: "Nice moves! You've got the makings of a real tamer.",
+    },
+  },
+  {
+    name: "Warden Pyra",
+    shirt: "#ff7a3c",
+    x: -14,
+    z: -12,
+    lines: [
+      "I am Pyra, Warden of the Ember Route.",
+      "My trial is Focus: you may NOT switch critters. Win with who you bring out.",
+      "Best me and the Ember Crest is yours.",
+    ],
+    warden: { crest: "Ember", trial: "Trial of Focus (no switching)", restrict: { noSwitch: true } },
+    challenge: {
+      party: [
+        { id: "cindershrew", level: 12 },
+        { id: "emberpup", level: 13 },
+        { id: "emberwulf", level: 15 },
+      ],
+      winLine: "The fire in your team is real. Take the Ember Crest.",
+    },
+  },
+  {
+    name: "Warden Marlow",
+    shirt: "#3ca7ff",
+    x: 16,
+    z: 8,
+    lines: [
+      "Marlow, Warden of the Aqua Route, at your service.",
+      "My trial is Grit: NO items. No potions, no revives. Just skill.",
+      "Show me your grit and earn the Aqua Crest.",
+    ],
+    warden: { crest: "Aqua", trial: "Trial of Grit (no items)", restrict: { noItems: true } },
+    challenge: {
+      party: [
+        { id: "brinefin", level: 13 },
+        { id: "tadmite", level: 14 },
+        { id: "torretoad", level: 16 },
+      ],
+      winLine: "Weathered and unbroken. The Aqua Crest is yours.",
+    },
+  },
+  {
+    name: "Warden Fern",
+    shirt: "#4cc95a",
+    x: -14,
+    z: 14,
+    lines: [
+      "I'm Fern, Warden of the Leaf Route, the last of the three.",
+      "My trial is Valor: no switching AND no items. The hardest path.",
+      "Overcome it and the Leaf Crest is yours.",
+    ],
+    warden: { crest: "Leaf", trial: "Trial of Valor (no switching, no items)", restrict: { noSwitch: true, noItems: true } },
+    challenge: {
+      party: [
+        { id: "mothbit", level: 14 },
+        { id: "leaflet", level: 15 },
+        { id: "thornmaw", level: 17 },
+      ],
+      winLine: "True valor. The Leaf Crest is yours, champion-to-be.",
+    },
+  },
+  {
+    name: "Champion Sol",
+    shirt: "#ffd23a",
+    x: 0,
+    z: -16,
+    lines: [
+      "So. You hold all three Crests.",
+      "I am Sol, and I guard the path to the Wellspring itself.",
+      "Show me everything you've learned in the Vale!",
+    ],
+    champion: true,
+    challenge: {
+      party: [
+        { id: "emberwulf", level: 18 },
+        { id: "torretoad", level: 18 },
+        { id: "thornmaw", level: 19 },
+        { id: "brinefin", level: 20 },
+      ],
+      winLine: "You are the Champion of Critter Vale!",
     },
   },
 ];

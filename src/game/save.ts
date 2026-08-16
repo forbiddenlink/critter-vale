@@ -2,6 +2,7 @@
 import type { CustomSpecies } from "./customSpecies";
 import type { Bag } from "./items";
 import type { QuirkId } from "./traits";
+import type { Element } from "./critters";
 
 export interface SavedCritter {
   id: string;
@@ -19,6 +20,9 @@ export interface SaveData {
   custom?: CustomSpecies[]; // summoned critters (full defs, re-registered on load)
   sprigs?: number; // currency
   bag?: Bag; // item inventory
+  crests?: Element[]; // Warden crests earned
+  champion?: boolean; // beat the Champion
+  beaten?: string[]; // trainer/warden names already defeated
 }
 
 const KEY = "critter-vale-save-v1";

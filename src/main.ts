@@ -6,9 +6,11 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
 import { Overworld, BLOOM_LAYER } from "./world/overworld";
+import type { Npc } from "./world/overworld";
 import { makeCritter } from "./game/battle";
 import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
+import type { Element } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
 import { openSummonLab } from "./ui/summonLab";
@@ -111,6 +113,8 @@ const caughtIds = new Set<string>(); // species ids ever owned (dex)
 const customOwned: CustomSpecies[] = []; // summoned critters (persisted + re-registered)
 let sprigs = 0; // currency
 const bag: Bag = {}; // item inventory
+const crests = new Set<Element>(); // Warden crests earned (Ember/Aqua/Leaf)
+let isChampion = false; // beat Champion Sol
 
 function syncDex() {
   for (const m of team) {
@@ -135,7 +139,10 @@ mute.addEventListener("click", () => {
 document.body.appendChild(mute);
 function drawHud() {
   if (!team.length) return;
-  hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow · 🌱 ${sprigs} Sprigs<br>Team: ${team
+  const crestBadges =
+    (crests.has("Ember") ? "🔥" : "") + (crests.has("Aqua") ? "💧" : "") + (crests.has("Leaf") ? "🍃" : "");
+  const rank = isChampion ? " · 👑 Champion" : crestBadges ? ` · Crests ${crestBadges}` : "";
+  hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow · 🌱 ${sprigs} Sprigs${rank}<br>Team: ${team
     .map((m) => `${m.species.name} Lv${m.level} (${m.hp}/${m.maxHp} HP)`)
     .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small>`;
 }
@@ -151,6 +158,9 @@ function persist() {
     custom: customOwned,
     sprigs,
     bag,
+    crests: [...crests],
+    champion: isChampion,
+    beaten: [...beatenTrainers],
   });
 }
 
@@ -187,7 +197,7 @@ world.onEncounter = ({ speciesId, level }) => {
 
 // trainer battles
 const beatenTrainers = new Set<string>();
-function startTrainer(npc: { name: string; challenge?: { party: { id: string; level: number }[]; winLine: string } }) {
+function startTrainer(npc: Npc) {
   if (!npc.challenge) return;
   const foeParty = npc.challenge.party.map((p) => makeCritter(p.id, p.level));
   foeParty.forEach((m) => seen.add(m.species.id)); // trainer mons count as seen
@@ -200,18 +210,28 @@ function startTrainer(npc: { name: string; challenge?: { party: { id: string; le
         handleFaint();
         return;
       }
+      let championWin = false;
       if (outcome === "won") {
         beatenTrainers.add(npc.name);
         const reward = npc.challenge!.party.reduce((s, p) => s + battleReward(p.level, true), 0);
         sprigs += reward;
-        showToast(`🏅 ${npc.challenge!.winLine} +${reward} Sprigs`);
+        if (npc.warden) {
+          crests.add(npc.warden.crest);
+          showToast(`🏅 You earned the ${npc.warden.crest} Crest! +${reward} Sprigs`);
+        } else if (npc.champion) {
+          isChampion = true;
+          championWin = true;
+        } else {
+          showToast(`🏅 ${npc.challenge!.winLine} +${reward} Sprigs`);
+        }
       }
       syncDex();
       drawHud();
       persist();
-      world.resume();
+      if (championWin) showVictory();
+      else world.resume();
     },
-    { trainerName: npc.name, bag }
+    { trainerName: npc.name, bag, restrict: npc.warden?.restrict }
   );
 }
 
@@ -220,11 +240,16 @@ world.onInteract = (npc) => {
   const d = document.createElement("div");
   d.className = "dialog";
   let i = 0;
+  // The Champion is sealed until you hold all three Crests.
+  const gated = !!npc.champion && crests.size < 3;
+  const lines = gated
+    ? ["The path to the Wellspring is sealed.", "Return when you hold all three Crests: Ember, Aqua, and Leaf."]
+    : npc.lines;
   const render = () => {
-    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${npc.lines[i]}</p><div class="dialog-cont">▶ space / click${i < npc.lines.length - 1 ? "" : " to close"}</div></div>`;
+    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${lines[i]}</p><div class="dialog-cont">▶ space / click${i < lines.length - 1 ? "" : " to close"}</div></div>`;
   };
   const afterDialog = () => {
-    if (npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
+    if (!gated && npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
     else world.resume();
   };
   const close = () => {
@@ -234,7 +259,7 @@ world.onInteract = (npc) => {
   };
   const advance = () => {
     i += 1;
-    if (i >= npc.lines.length) close();
+    if (i >= lines.length) close();
     else render();
   };
   const onKey = (e: KeyboardEvent) => {
@@ -453,6 +478,34 @@ function showFaintScreen(onContinue: () => void) {
   window.addEventListener("keydown", onKey);
 }
 
+// --- victory screen (beat the Champion) ---
+function showVictory() {
+  const root = document.createElement("div");
+  root.className = "victory";
+  root.innerHTML = `
+    <div class="victory-inner">
+      <div class="victory-crown">👑</div>
+      <h2>Champion of Critter Vale!</h2>
+      <p>You bested Champion Sol and every Warden of the Vale. The Wellspring is yours to explore, endlessly.</p>
+      <button class="victory-btn">Continue</button>
+    </div>`;
+  document.body.appendChild(root);
+  const go = () => {
+    root.remove();
+    window.removeEventListener("keydown", onKey);
+    world.resume();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      go();
+    }
+  };
+  root.querySelector(".victory-btn")!.addEventListener("click", go);
+  window.addEventListener("keydown", onKey);
+  sfx("levelup");
+}
+
 function handleFaint() {
   showFaintScreen(() => {
     team.forEach((m) => (m.hp = m.maxHp));
@@ -521,6 +574,9 @@ function resumeFromSave(s: SaveData) {
   (s.caughtIds ?? []).forEach((id) => caughtIds.add(id));
   sprigs = s.sprigs ?? 0;
   Object.assign(bag, s.bag ?? {});
+  (s.crests ?? []).forEach((c) => crests.add(c));
+  isChampion = s.champion ?? false;
+  (s.beaten ?? []).forEach((n) => beatenTrainers.add(n));
   syncDex();
   world.setPos(s.pos.x, s.pos.z);
   world.resume();

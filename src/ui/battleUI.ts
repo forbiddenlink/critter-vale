@@ -23,6 +23,7 @@ export type BattleOutcome = "caught" | "won" | "lost" | "ran";
 export interface BattleOpts {
   trainerName?: string; // presence = trainer battle (foe party, no catch/run)
   bag?: Bag; // shared inventory; battle consumes items from it
+  restrict?: { noSwitch?: boolean; noItems?: boolean }; // Warden trial constraints (enforced)
 }
 
 const MAX_TEAM = 6;
@@ -56,6 +57,7 @@ export function runBattle(
 ) {
   const isTrainer = !!opts.trainerName;
   const bag: Bag = opts.bag ?? {};
+  const restrict = opts.restrict ?? {};
   let active = party.find((m) => m.hp > 0) ?? party[0];
   let foe = foes.find((m) => m.hp > 0) ?? foes[0];
 
@@ -125,6 +127,10 @@ export function runBattle(
   };
   renderFoe();
   renderActive();
+
+  // Warden trial constraints: physically remove the disallowed actions.
+  if (restrict.noItems) (el("#bag") as HTMLElement).hidden = true;
+  if (restrict.noSwitch) (el("#switch") as HTMLElement).hidden = true;
 
   const setBusy = (b: boolean) => {
     root.querySelectorAll<HTMLButtonElement>(".actions button").forEach((x) => (x.disabled = b));
