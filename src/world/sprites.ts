@@ -2,6 +2,7 @@
 // with a procedural canvas fallback if a file is missing.
 import * as THREE from "three";
 import type { Species } from "../game/critters";
+import { spriteUrl } from "../game/customSpecies";
 
 const loader = new THREE.TextureLoader();
 
@@ -37,7 +38,7 @@ function spriteFrom(url: string, fallback: HTMLCanvasElement, worldHeight: numbe
 }
 
 export function makeCritterSprite(species: Species, worldHeight = 2.1): THREE.Sprite {
-  return spriteFrom(`/sprites/${species.id}.png`, critterCanvas(species), worldHeight);
+  return spriteFrom(spriteUrl(species.id), critterCanvas(species), worldHeight);
 }
 
 export function makePlayerSprite(worldHeight = 2.3): THREE.Sprite {

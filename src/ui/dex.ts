@@ -1,5 +1,6 @@
 // Critter-Dex: a collection screen over all species, showing caught / seen / unknown.
 import { SPECIES } from "../game/critters";
+import { spriteUrl } from "../game/customSpecies";
 
 /**
  * Cursor-tracked holo-foil shimmer for `.holo` cards inside `scope`.
@@ -48,7 +49,10 @@ const DEX_ORDER = [
 
 export function openDex(seen: Set<string>, caught: Set<string>) {
   if (document.querySelector(".dex")) return;
-  const total = DEX_ORDER.length;
+  // Append any owned species not in the static order (i.e. summoned custom critters).
+  const extras = [...caught, ...seen].filter((id) => !DEX_ORDER.includes(id) && SPECIES[id]);
+  const order = [...DEX_ORDER, ...new Set(extras)];
+  const total = order.length;
   const root = document.createElement("div");
   root.className = "dex";
   root.innerHTML = `
@@ -59,7 +63,7 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
         <button class="dex-close" aria-label="Close">✕</button>
       </div>
       <div class="dex-grid">
-        ${DEX_ORDER.map((id) => {
+        ${order.map((id) => {
           const s = SPECIES[id];
           const isCaught = caught.has(id);
           const isSeen = seen.has(id);
@@ -73,7 +77,7 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
           return `<div class="dex-cell ${state}${holo}" style="--c:${s.color}">
             ${
               isCaught || isSeen
-                ? `<img src="/sprites/${id}.png" alt="">`
+                ? `<img src="${spriteUrl(id)}" alt="">`
                 : `<div class="dex-q">?</div>`
             }
             <div class="dex-name">${name}</div>

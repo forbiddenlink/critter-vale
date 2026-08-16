@@ -12,6 +12,7 @@ import {
   gainXp,
   checkEvolution,
 } from "../game/battle";
+import { spriteUrl } from "../game/customSpecies";
 import { sfx } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
@@ -99,13 +100,13 @@ export function runBattle(
   };
 
   const renderFoe = () => {
-    (el("#foeMon") as HTMLImageElement).src = `/sprites/${foe.species.id}.png`;
+    (el("#foeMon") as HTMLImageElement).src = spriteUrl(foe.species.id);
     el(".foe .nameplate").innerHTML =
       `${foe.species.name} <small>Lv${foe.level}</small> · ${foe.species.element}`;
     drawHp();
   };
   const renderActive = () => {
-    (el("#allyMon") as HTMLImageElement).src = `/sprites/${active.species.id}.png`;
+    (el("#allyMon") as HTMLImageElement).src = spriteUrl(active.species.id);
     el(".ally .nameplate").innerHTML =
       `${active.species.name} <small id="allyLv">Lv${active.level}</small> · ${active.species.element}`;
     const moves = movesFor(active.species.id);
@@ -207,7 +208,7 @@ export function runBattle(
         .map(
           (m) =>
             `<button data-id="${m.species.id}" style="--c:${m.species.color}">
-               <img src="/sprites/${m.species.id}.png" alt="">
+               <img src="${spriteUrl(m.species.id)}" alt="">
                <span>${m.species.name} <small>Lv${m.level}</small></span>
                <span class="sw-hp">${m.hp}/${m.maxHp}</span>
              </button>`

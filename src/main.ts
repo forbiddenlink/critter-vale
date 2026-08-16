@@ -11,6 +11,9 @@ import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
+import { openSummonLab } from "./ui/summonLab";
+import { registerCustom } from "./game/customSpecies";
+import type { CustomSpecies } from "./game/customSpecies";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
@@ -102,6 +105,7 @@ const team: Critter[] = [];
 const caught: string[] = [];
 const seen = new Set<string>(); // species ids encountered (dex)
 const caughtIds = new Set<string>(); // species ids ever owned (dex)
+const customOwned: CustomSpecies[] = []; // summoned critters (persisted + re-registered)
 
 function syncDex() {
   for (const m of team) {
@@ -139,6 +143,7 @@ function persist() {
     pos: world.getPos(),
     seen: [...seen],
     caughtIds: [...caughtIds],
+    custom: customOwned,
   });
 }
 
@@ -257,6 +262,19 @@ function restAtHome() {
   sfx("levelup");
 }
 
+function onSummoned(spec: CustomSpecies) {
+  registerCustom(spec); // add to SPECIES / MOVESETS / sprite registry so the game can use it
+  customOwned.push(spec);
+  seen.add(spec.id);
+  caughtIds.add(spec.id);
+  if (!caught.includes(spec.name)) caught.push(spec.name);
+  if (team.length < MAX_TEAM) team.push(makeCritter(spec.id, 7));
+  drawHud();
+  persist();
+  showToast(`✨ ${spec.name} joined your party!`);
+  sfx("levelup");
+}
+
 function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: number }) {
   if (document.querySelector(".interior")) return;
   const root = document.createElement("div");
@@ -276,7 +294,8 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
     body = "Home sweet home. A cozy bed and a warm hearth. Resting here restores your whole team.";
     extra = `<button class="io-btn io-primary" data-act="rest">😴 Rest &amp; Save</button>`;
   } else if (b.kind === "lab") {
-    body = "Prof. Hollis's research lab hums with strange energy. Something is being built here...";
+    body = "Prof. Hollis's research lab hums with strange energy. Describe a critter and the lab will summon it into being.";
+    extra = `<button class="io-btn io-primary" data-act="summon">✨ Summon a Critter</button>`;
   } else {
     body = 'The Trading Post. Racks of berries and gear line the walls. "Nothing new in stock today, tamer!"';
   }
@@ -300,6 +319,9 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
       if (act === "rest") {
         restAtHome();
         close();
+      } else if (act === "summon") {
+        close();
+        openSummonLab(onSummoned);
       } else {
         close(); // leave
       }
@@ -387,6 +409,11 @@ function armMusicOnGesture() {
 }
 
 function resumeFromSave(s: SaveData) {
+  // Re-register summoned critters BEFORE rebuilding the team (team may reference their ids).
+  for (const c of s.custom ?? []) {
+    registerCustom(c);
+    customOwned.push(c);
+  }
   for (const c of s.team) {
     const m = makeCritter(c.id, c.level);
     m.xp = c.xp;
