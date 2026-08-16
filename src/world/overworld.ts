@@ -69,6 +69,23 @@ const NPCS: Npc[] = [
   },
 ];
 
+export interface Building {
+  name: string;
+  kind: "home" | "lab" | "post";
+  x: number;
+  z: number;
+  color: number;
+  doorX: number;
+  doorZ: number; // front of the house (z + 2.75), where the player stands to enter
+}
+
+// Names/kinds for the three town houses. Door sits at (x, z + 2.75); see buildTown().
+const BUILDINGS: Building[] = [
+  { name: "Tamer's Home", kind: "home", x: -10, z: 0, color: 0xe8695f, doorX: -10, doorZ: 2.75 },
+  { name: "Critter Lab", kind: "lab", x: 10, z: -14, color: 0x5b8fd8, doorX: 10, doorZ: -11.25 },
+  { name: "Trading Post", kind: "post", x: -6, z: 12, color: 0xe0b45b, doorX: -6, doorZ: 14.75 },
+];
+
 const WORLD = 40;
 const GRASS_TILES: Array<[number, number, number, number]> = [
   [-14, -6, -14, -6],
@@ -89,7 +106,9 @@ export class Overworld {
   onEncounter: ((e: Encounter) => void) | null = null;
   onInteract: ((npc: Npc) => void) | null = null;
   onHeal: (() => void) | null = null;
+  onEnterBuilding: ((b: Building) => void) | null = null;
   private nearNpc: Npc | null = null;
+  private nearDoor: Building | null = null;
   private inHealer = false;
   active = true;
 
@@ -337,17 +356,12 @@ export class Overworld {
   }
 
   private buildTown() {
-    const houses: Array<[number, number, number]> = [
-      [-10, 0, 0xe8695f],
-      [10, -14, 0x5b8fd8],
-      [-6, 12, 0xe0b45b],
-    ];
     const winMat = new THREE.MeshStandardMaterial({
       color: 0xffe08a,
       emissive: 0xffcf5a,
       emissiveIntensity: 1.4,
     });
-    for (const [x, z, color] of houses) {
+    for (const { x, z, color } of BUILDINGS) {
       const body = new THREE.Mesh(
         new RoundedBoxGeometry(5.4, 4.2, 5.4, 4, 0.35),
         new THREE.MeshStandardMaterial({ color, roughness: 0.8 })
@@ -460,6 +474,17 @@ export class Overworld {
       }
     }
 
+    // nearest building door in entry range (skipped if an NPC already has focus)
+    this.nearDoor = null;
+    if (!this.nearNpc) {
+      for (const b of BUILDINGS) {
+        if (Math.hypot(p.x - b.doorX, p.z - b.doorZ) < 2.4) {
+          this.nearDoor = b;
+          break;
+        }
+      }
+    }
+
     // healer pad: fire once on entering the zone
     const onPad = Math.hypot(p.x - HEALER.x, p.z - HEALER.z) < HEALER.r;
     if (onPad && !this.inHealer) this.onHeal?.();
@@ -510,9 +535,13 @@ export class Overworld {
 
   /** Trigger the nearby interaction (talk / battle). Safe to call from a click or key. */
   interact() {
-    if (this.active && this.nearNpc) {
+    if (!this.active) return;
+    if (this.nearNpc) {
       this.active = false;
       this.onInteract?.(this.nearNpc);
+    } else if (this.nearDoor) {
+      this.active = false;
+      this.onEnterBuilding?.(this.nearDoor);
     }
   }
 
@@ -524,6 +553,7 @@ export class Overworld {
         ? `⚔ Press E to battle ${this.nearNpc.name}`
         : `Press E to talk to ${this.nearNpc.name}`;
     }
+    if (this.nearDoor) return `🚪 Press E to enter ${this.nearDoor.name}`;
     return null;
   }
 

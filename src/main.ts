@@ -147,12 +147,15 @@ world.onEncounter = ({ speciesId, level }) => {
   seen.add(speciesId); // dex: encountered
   const wild = makeCritter(speciesId, level);
   runBattle(team, [wild], (outcome, w) => {
+    if (outcome === "lost") {
+      handleFaint(); // whiteout screen then heal + respawn + persist + resume
+      return;
+    }
     if (outcome === "caught" && w) {
       if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
       if (!caught.includes(w.species.name)) caught.push(w.species.name);
       caughtIds.add(w.species.id);
     }
-    if (outcome === "lost") team.forEach((m) => (m.hp = m.maxHp)); // whole team recovers in town
     syncDex(); // picks up evolutions + owned species
     drawHud(); // reflect XP / level-ups + catches
     persist();
@@ -171,11 +174,14 @@ function startTrainer(npc: { name: string; challenge?: { party: { id: string; le
     team,
     foeParty,
     (outcome) => {
+      if (outcome === "lost") {
+        handleFaint();
+        return;
+      }
       if (outcome === "won") {
         beatenTrainers.add(npc.name);
         showToast(`🏅 ${npc.challenge!.winLine}`);
       }
-      if (outcome === "lost") team.forEach((m) => (m.hp = m.maxHp));
       syncDex();
       drawHud();
       persist();
@@ -238,6 +244,106 @@ world.onHeal = () => {
     persist();
   }
 };
+
+// --- enterable buildings ---
+world.onEnterBuilding = (b) => showInterior(b);
+
+function restAtHome() {
+  team.forEach((m) => (m.hp = m.maxHp));
+  syncDex();
+  drawHud();
+  persist();
+  showToast("😴 You rested. Your team is fully healed!");
+  sfx("levelup");
+}
+
+function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: number }) {
+  if (document.querySelector(".interior")) return;
+  const root = document.createElement("div");
+  root.className = `interior interior-${b.kind}`;
+  const close = () => {
+    root.remove();
+    window.removeEventListener("keydown", onKey);
+    world.resume();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") close();
+  };
+
+  let body = "";
+  let extra = "";
+  if (b.kind === "home") {
+    body = "Home sweet home. A cozy bed and a warm hearth. Resting here restores your whole team.";
+    extra = `<button class="io-btn io-primary" data-act="rest">😴 Rest &amp; Save</button>`;
+  } else if (b.kind === "lab") {
+    body = "Prof. Hollis's research lab hums with strange energy. Something is being built here...";
+  } else {
+    body = 'The Trading Post. Racks of berries and gear line the walls. "Nothing new in stock today, tamer!"';
+  }
+
+  const hex = `#${b.color.toString(16).padStart(6, "0")}`;
+  root.innerHTML = `
+    <div class="io-panel" style="--c:${hex}">
+      <div class="io-head"><h2>${b.name}</h2><button class="io-close" aria-label="Close">✕</button></div>
+      <p class="io-body">${body}</p>
+      <div class="io-actions">${extra}<button class="io-btn" data-act="leave">← Leave</button></div>
+    </div>`;
+  document.body.appendChild(root);
+
+  root.querySelector(".io-close")!.addEventListener("click", close);
+  root.addEventListener("click", (e) => {
+    if (e.target === root) close();
+  });
+  root.querySelectorAll<HTMLButtonElement>("[data-act]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const act = btn.dataset.act;
+      if (act === "rest") {
+        restAtHome();
+        close();
+      } else {
+        close(); // leave
+      }
+    });
+  });
+  window.addEventListener("keydown", onKey);
+}
+
+// --- whiteout / faint screen (all critters down) ---
+function showFaintScreen(onContinue: () => void) {
+  const root = document.createElement("div");
+  root.className = "faint";
+  root.innerHTML = `
+    <div class="faint-inner">
+      <h2>Whiteout!</h2>
+      <p>All your critters fainted. You hurry back to Sprout Hollow to recover...</p>
+      <button class="faint-btn">Continue</button>
+    </div>`;
+  document.body.appendChild(root);
+  const go = () => {
+    root.remove();
+    window.removeEventListener("keydown", onKey);
+    onContinue();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      go();
+    }
+  };
+  root.querySelector(".faint-btn")!.addEventListener("click", go);
+  window.addEventListener("keydown", onKey);
+}
+
+function handleFaint() {
+  showFaintScreen(() => {
+    team.forEach((m) => (m.hp = m.maxHp));
+    world.setPos(-10, 5); // respawn by the home / healing pad
+    syncDex();
+    drawHud();
+    persist();
+    world.resume();
+  });
+}
 
 window.addEventListener("beforeunload", persist);
 
