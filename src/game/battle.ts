@@ -92,6 +92,30 @@ export const MOVESETS: Record<string, [Move, Move]> = {
     { name: "Vine Lash", power: 38, element: "Leaf" },
     { name: "Body Slam", power: 28, element: "Normal" },
   ],
+  scorchick: [
+    { name: "Scorch Peck", power: 29, element: "Ember" },
+    { name: "Peck", power: 24, element: "Normal" },
+  ],
+  pyrewing: [
+    { name: "Flame Gale", power: 38, element: "Ember" },
+    { name: "Wing Slam", power: 28, element: "Normal" },
+  ],
+  ripplet: [
+    { name: "Ripple Jet", power: 28, element: "Aqua" },
+    { name: "Tackle", power: 24, element: "Normal" },
+  ],
+  coralux: [
+    { name: "Reef Cannon", power: 38, element: "Aqua" },
+    { name: "Body Slam", power: 28, element: "Normal" },
+  ],
+  sproutle: [
+    { name: "Leaf Dart", power: 29, element: "Leaf" },
+    { name: "Tackle", power: 24, element: "Normal" },
+  ],
+  bramblor: [
+    { name: "Bramble Whip", power: 38, element: "Leaf" },
+    { name: "Body Slam", power: 28, element: "Normal" },
+  ],
 };
 
 export function movesFor(speciesId: string): [Move, Move] {

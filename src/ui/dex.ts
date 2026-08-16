@@ -38,6 +38,12 @@ const DEX_ORDER = [
   "mothbit",
   "cindershrew",
   "brinefin",
+  "scorchick",
+  "pyrewing",
+  "ripplet",
+  "coralux",
+  "sproutle",
+  "bramblor",
 ];
 
 export function openDex(seen: Set<string>, caught: Set<string>) {
