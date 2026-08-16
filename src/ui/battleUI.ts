@@ -7,18 +7,21 @@ import {
   movesFor,
   elementMultiplier,
   attemptCatch,
-  catchChance,
+  effectiveCatchChance,
   xpReward,
   gainXp,
   checkEvolution,
 } from "../game/battle";
 import { spriteUrl } from "../game/customSpecies";
+import { ITEMS, consume, bagCount } from "../game/items";
+import type { Bag, ItemId } from "../game/items";
 import { sfx } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
 
 export interface BattleOpts {
   trainerName?: string; // presence = trainer battle (foe party, no catch/run)
+  bag?: Bag; // shared inventory; battle consumes items from it
 }
 
 const MAX_TEAM = 6;
@@ -51,6 +54,7 @@ export function runBattle(
   opts: BattleOpts = {}
 ) {
   const isTrainer = !!opts.trainerName;
+  const bag: Bag = opts.bag ?? {};
   let active = party.find((m) => m.hp > 0) ?? party[0];
   let foe = foes.find((m) => m.hp > 0) ?? foes[0];
 
@@ -79,7 +83,7 @@ export function runBattle(
         <button class="move" data-i="1"></button>
       </div>
       <div class="menu">
-        <button id="catch"${isTrainer ? " hidden" : ""}>Catch</button>
+        <button id="bag">Bag</button>
         <button id="switch">Switch</button>
         <button id="run"${isTrainer ? " hidden" : ""}>Run</button>
       </div>
@@ -293,28 +297,155 @@ export function runBattle(
     openSwitchMenu(false);
   });
 
-  if (!isTrainer) {
-    el("#catch").addEventListener("click", () => {
-      setBusy(true);
-      if (party.length >= MAX_TEAM) {
-        log("Your team is full! You can't catch more right now.");
-        setBusy(false);
-        return;
-      }
-      const pct = Math.round(catchChance(foe) * 100);
-      if (attemptCatch(foe)) {
-        el("#foeMon").classList.add("caught");
-        sfx("catch");
-        catchConfetti();
-        setTimeout(() => {
-          log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
-          setTimeout(() => finish("caught", foe), 700);
-        }, 400);
-      } else {
-        log(`So close! ${foe.species.name} broke free (${pct}% shot).`);
+  // throw a ball (wild only): consumes it, then attempts the catch
+  const throwBall = (id: ItemId) => {
+    if (party.length >= MAX_TEAM) {
+      log("Your team is full! You can't catch more right now.");
+      setBusy(false);
+      return;
+    }
+    if (!consume(bag, id)) {
+      setBusy(false);
+      return;
+    }
+    const ball = ITEMS[id];
+    const pct = Math.round(effectiveCatchChance(foe, ball.power) * 100);
+    if (attemptCatch(foe, Math.random, ball.power)) {
+      el("#foeMon").classList.add("caught");
+      sfx("catch");
+      catchConfetti();
+      setTimeout(() => {
+        log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
+        setTimeout(() => finish("caught", foe), 700);
+      }, 400);
+    } else {
+      log(`So close! ${foe.species.name} broke free (${pct}% shot).`);
+      setTimeout(foeTurn, 650);
+    }
+  };
+
+  // use a potion on the active critter (costs a turn)
+  const usePotion = (id: ItemId) => {
+    if (active.hp >= active.maxHp) {
+      log(`${active.species.name} is already at full HP.`);
+      setBusy(false);
+      return;
+    }
+    if (!consume(bag, id)) {
+      setBusy(false);
+      return;
+    }
+    const heal = ITEMS[id].power;
+    active.hp = Math.min(active.maxHp, active.hp + heal);
+    drawHp();
+    log(`${active.species.name} recovered ${heal} HP!`);
+    sfx("levelup");
+    setTimeout(foeTurn, 650);
+  };
+
+  // revive a chosen fainted party member (costs a turn)
+  const useRevive = (id: ItemId) => {
+    const fainted = party.filter((m) => m.hp <= 0);
+    if (!fainted.length) {
+      log("No fainted critter to revive.");
+      setBusy(false);
+      return;
+    }
+    const menu = document.createElement("div");
+    menu.className = "switch-menu";
+    menu.innerHTML =
+      `<div class="switch-title">Revive which critter?</div>` +
+      fainted
+        .map(
+          (m) =>
+            `<button data-id="${m.species.id}" style="--c:${m.species.color}">
+               <img src="${spriteUrl(m.species.id)}" alt="">
+               <span>${m.species.name} <small>Lv${m.level}</small></span>
+             </button>`
+        )
+        .join("") +
+      `<button class="sw-cancel" data-id="">Back</button>`;
+    root.appendChild(menu);
+    menu.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const rid = btn.dataset.id;
+        menu.remove();
+        if (!rid) {
+          setBusy(false);
+          return;
+        }
+        const target = fainted.find((m) => m.species.id === rid)!;
+        if (!consume(bag, id)) {
+          setBusy(false);
+          return;
+        }
+        target.hp = Math.max(1, Math.round(target.maxHp * ITEMS[id].power));
+        log(`${target.species.name} was revived!`);
+        sfx("levelup");
         setTimeout(foeTurn, 650);
-      }
+      });
     });
+  };
+
+  const openBagMenu = () => {
+    const usable = (Object.keys(bag) as ItemId[]).filter((id) => {
+      const n = bag[id] ?? 0;
+      if (n <= 0) return false;
+      if (ITEMS[id].kind === "ball" && isTrainer) return false; // no catching trainers' critters
+      return true;
+    });
+    const menu = document.createElement("div");
+    menu.className = "switch-menu bag-menu";
+    if (!usable.length) {
+      menu.innerHTML =
+        `<div class="switch-title">Your bag is empty</div>` +
+        `<button class="sw-cancel" data-id="">Back</button>`;
+    } else {
+      menu.innerHTML =
+        `<div class="switch-title">Bag</div>` +
+        usable
+          .map((id) => {
+            const it = ITEMS[id];
+            const extra =
+              it.kind === "ball"
+                ? ` <small>${Math.round(effectiveCatchChance(foe, it.power) * 100)}% catch</small>`
+                : "";
+            return `<button data-id="${id}" style="--c:#39c6ff">
+                <span class="bag-emoji">${it.emoji}</span>
+                <span>${it.name} <small>x${bag[id]}</small>${extra}</span>
+              </button>`;
+          })
+          .join("") +
+        `<button class="sw-cancel" data-id="">Back</button>`;
+    }
+    root.appendChild(menu);
+    menu.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id as ItemId | "";
+        menu.remove();
+        if (!id) {
+          setBusy(false);
+          return;
+        }
+        const kind = ITEMS[id].kind;
+        if (kind === "ball") throwBall(id);
+        else if (kind === "heal") usePotion(id);
+        else useRevive(id);
+      });
+    });
+  };
+
+  el("#bag").addEventListener("click", () => {
+    setBusy(true);
+    if (bagCount(bag) === 0) {
+      log("Your bag is empty. Buy items at the Trading Post.");
+      setBusy(false);
+      return;
+    }
+    openBagMenu();
+  });
+
+  if (!isTrainer) {
     el("#run").addEventListener("click", () => {
       log("Got away safely.");
       finish("ran", null);

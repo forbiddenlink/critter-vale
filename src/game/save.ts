@@ -1,5 +1,6 @@
 // localStorage persistence: team, caught critters, player position.
 import type { CustomSpecies } from "./customSpecies";
+import type { Bag } from "./items";
 
 export interface SavedCritter {
   id: string;
@@ -14,6 +15,8 @@ export interface SaveData {
   seen?: string[]; // species ids encountered (dex)
   caughtIds?: string[]; // species ids ever caught/owned (dex)
   custom?: CustomSpecies[]; // summoned critters (full defs, re-registered on load)
+  sprigs?: number; // currency
+  bag?: Bag; // item inventory
 }
 
 const KEY = "critter-vale-save-v1";

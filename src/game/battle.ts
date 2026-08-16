@@ -199,7 +199,12 @@ export function catchChance(target: Critter): number {
   return Math.min(1, Math.max(0, p));
 }
 
-/** Attempt a catch. rng() returns [0,1); injected for deterministic tests. */
-export function attemptCatch(target: Critter, rng: () => number = Math.random): boolean {
-  return rng() < catchChance(target);
+/** Effective catch chance with a ball multiplier applied (clamped to [0,1]). */
+export function effectiveCatchChance(target: Critter, ballMult = 1): number {
+  return Math.min(1, catchChance(target) * ballMult);
+}
+
+/** Attempt a catch. ballMult scales odds (better balls > 1). rng injected for tests. */
+export function attemptCatch(target: Critter, rng: () => number = Math.random, ballMult = 1): boolean {
+  return rng() < effectiveCatchChance(target, ballMult);
 }

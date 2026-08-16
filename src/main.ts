@@ -14,6 +14,8 @@ import { openDex, attachHolo } from "./ui/dex";
 import { openSummonLab } from "./ui/summonLab";
 import { registerCustom } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
+import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
+import type { Bag, ItemId } from "./game/items";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
@@ -106,6 +108,8 @@ const caught: string[] = [];
 const seen = new Set<string>(); // species ids encountered (dex)
 const caughtIds = new Set<string>(); // species ids ever owned (dex)
 const customOwned: CustomSpecies[] = []; // summoned critters (persisted + re-registered)
+let sprigs = 0; // currency
+const bag: Bag = {}; // item inventory
 
 function syncDex() {
   for (const m of team) {
@@ -130,9 +134,9 @@ mute.addEventListener("click", () => {
 document.body.appendChild(mute);
 function drawHud() {
   if (!team.length) return;
-  hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow<br>Team: ${team
+  hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow · 🌱 ${sprigs} Sprigs<br>Team: ${team
     .map((m) => `${m.species.name} Lv${m.level} (${m.hp}/${m.maxHp} HP)`)
-    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · grass = wild critters · E talk · green pad heals · C = Dex</small>`;
+    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small>`;
 }
 
 function persist() {
@@ -144,6 +148,8 @@ function persist() {
     seen: [...seen],
     caughtIds: [...caughtIds],
     custom: customOwned,
+    sprigs,
+    bag,
   });
 }
 
@@ -151,21 +157,31 @@ world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   seen.add(speciesId); // dex: encountered
   const wild = makeCritter(speciesId, level);
-  runBattle(team, [wild], (outcome, w) => {
-    if (outcome === "lost") {
-      handleFaint(); // whiteout screen then heal + respawn + persist + resume
-      return;
-    }
-    if (outcome === "caught" && w) {
-      if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
-      if (!caught.includes(w.species.name)) caught.push(w.species.name);
-      caughtIds.add(w.species.id);
-    }
-    syncDex(); // picks up evolutions + owned species
-    drawHud(); // reflect XP / level-ups + catches
-    persist();
-    world.resume();
-  });
+  runBattle(
+    team,
+    [wild],
+    (outcome, w) => {
+      if (outcome === "lost") {
+        handleFaint(); // whiteout screen then heal + respawn + persist + resume
+        return;
+      }
+      if (outcome === "won" || outcome === "caught") {
+        const reward = battleReward(level, false);
+        sprigs += reward;
+        showToast(`🌱 +${reward} Sprigs`);
+      }
+      if (outcome === "caught" && w) {
+        if (team.length < MAX_TEAM) team.push(w); // caught critter joins the party
+        if (!caught.includes(w.species.name)) caught.push(w.species.name);
+        caughtIds.add(w.species.id);
+      }
+      syncDex(); // picks up evolutions + owned species
+      drawHud(); // reflect XP / level-ups + catches
+      persist();
+      world.resume();
+    },
+    { bag }
+  );
 };
 
 // trainer battles
@@ -185,14 +201,16 @@ function startTrainer(npc: { name: string; challenge?: { party: { id: string; le
       }
       if (outcome === "won") {
         beatenTrainers.add(npc.name);
-        showToast(`🏅 ${npc.challenge!.winLine}`);
+        const reward = npc.challenge!.party.reduce((s, p) => s + battleReward(p.level, true), 0);
+        sprigs += reward;
+        showToast(`🏅 ${npc.challenge!.winLine} +${reward} Sprigs`);
       }
       syncDex();
       drawHud();
       persist();
       world.resume();
     },
-    { trainerName: npc.name }
+    { trainerName: npc.name, bag }
   );
 }
 
@@ -251,7 +269,61 @@ world.onHeal = () => {
 };
 
 // --- enterable buildings ---
-world.onEnterBuilding = (b) => showInterior(b);
+world.onEnterBuilding = (b) => (b.kind === "post" ? openShop() : showInterior(b));
+
+function openShop() {
+  if (document.querySelector(".interior")) return;
+  const root = document.createElement("div");
+  root.className = "interior interior-post";
+  const close = () => {
+    root.remove();
+    window.removeEventListener("keydown", onKey);
+    world.resume();
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === "Escape") close();
+  };
+  const render = () => {
+    root.innerHTML = `
+      <div class="io-panel shop-panel" style="--c:#e0b45b">
+        <div class="io-head"><h2>Trading Post</h2><span class="shop-sprigs">🌱 ${sprigs}</span><button class="io-close" aria-label="Close">✕</button></div>
+        <div class="shop-list">
+          ${SHOP_ORDER.map((id) => {
+            const it = ITEMS[id];
+            const owned = bag[id] ?? 0;
+            const afford = sprigs >= it.price;
+            return `<div class="shop-item">
+              <span class="shop-emoji">${it.emoji}</span>
+              <span class="shop-info"><strong>${it.name}</strong><small>${it.desc}</small></span>
+              <span class="shop-owned">x${owned}</span>
+              <button class="shop-buy" data-id="${id}"${afford ? "" : " disabled"}>🌱 ${it.price}</button>
+            </div>`;
+          }).join("")}
+        </div>
+        <div class="io-actions"><button class="io-btn" data-act="leave">← Leave</button></div>
+      </div>`;
+    root.querySelector(".io-close")!.addEventListener("click", close);
+    root.querySelector('[data-act="leave"]')!.addEventListener("click", close);
+    root.querySelectorAll<HTMLButtonElement>(".shop-buy").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id as ItemId;
+        if (sprigs < ITEMS[id].price) return;
+        sprigs -= ITEMS[id].price;
+        add(bag, id);
+        persist();
+        drawHud();
+        sfx("levelup");
+        render();
+      });
+    });
+  };
+  root.addEventListener("click", (e) => {
+    if (e.target === root) close();
+  });
+  document.body.appendChild(root);
+  render();
+  window.addEventListener("keydown", onKey);
+}
 
 function restAtHome() {
   team.forEach((m) => (m.hp = m.maxHp));
@@ -422,6 +494,8 @@ function resumeFromSave(s: SaveData) {
   }
   (s.seen ?? []).forEach((id) => seen.add(id));
   (s.caughtIds ?? []).forEach((id) => caughtIds.add(id));
+  sprigs = s.sprigs ?? 0;
+  Object.assign(bag, s.bag ?? {});
   syncDex();
   world.setPos(s.pos.x, s.pos.z);
   world.resume();
@@ -455,6 +529,8 @@ function showTitle() {
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
       team.push(makeCritter(btn.dataset.id!, 6));
+      Object.assign(bag, starterBag()); // Prof. Hollis's starting kit
+      sprigs = STARTER_SPRIGS;
       syncDex();
       startMusic();
       sfx("levelup");
