@@ -33,14 +33,13 @@ pnpm test          # vitest run
 - `src/main.ts` - entry point; sets up the Three.js scene (bloom post-processing pipeline),
   wires the overworld, battle UI, dex, summon/fusion labs, and save system together
 - `src/world/` - `overworld.ts` (scene/NPCs, `Overworld` class, `BLOOM_LAYER`), `sprites.ts`
-- `src/game/` - core game logic: `battle.ts` (`Critter`, `makeCritter`), `critters.ts`
-  (`SPECIES`, `STARTERS`, `Element` type), `customSpecies.ts` (AI-summoned critters),
-  `items.ts` (`ITEMS`, `SHOP_ORDER`, bag/reward logic), `movesets.ts`, `traits.ts`,
+- `src/game/` - core game logic: `battle.ts` (`Critter`, `makeCritter`, `MOVESETS`),
+  `critters.ts` (`SPECIES`, `STARTERS`, `Element` type), `customSpecies.ts` (AI-summoned
+  critters), `items.ts` (`ITEMS`, `SHOP_ORDER`, bag/reward logic), `traits.ts`,
   `save.ts` (`loadSave`/`writeSave`/`clearSave`). Most files have a co-located `.test.ts`.
 - `src/ui/` - `battleUI.ts`, `dex.ts`, `summonLab.ts`, `fusionLab.ts`, `summonApi.ts`
   (client side of the `api/summon.js` polling flow)
 - `src/audio.ts` - sound effects and music
-- `src/dev/spector.ts` - SpectorJS WebGL frame debugging hook (dev only)
 - `api/summon.js` - Vercel serverless function; see Stack above
 - `public/sprites/`, `public/audio/` - static game assets
 - `docs/WORLD_BIBLE.md` - lore/story/system design doc
