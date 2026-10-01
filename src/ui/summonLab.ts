@@ -3,7 +3,7 @@
 import type { Element } from "../game/critters";
 import { customId, rollCustom } from "../game/customSpecies";
 import type { CustomSpecies } from "../game/customSpecies";
-import { generateCritter } from "./summonApi";
+import { generateCritter, type Wallet } from "./summonApi";
 
 const ELEMENTS: Element[] = ["Ember", "Aqua", "Leaf"];
 const STATUS_LINES = [
@@ -14,7 +14,12 @@ const STATUS_LINES = [
   "Adding the finishing spark...",
 ];
 
-export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
+export function openSummonLab(
+  onSummoned: (c: CustomSpecies) => void,
+  wallet: Wallet,
+  cost: number,
+  partyFull: () => boolean
+) {
   if (document.querySelector(".summon")) return;
   let element: Element = "Ember";
   let cancelled = false;
@@ -30,10 +35,13 @@ export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
     if (e.key === "Escape") close();
   };
 
+  // No storage box exists, so a summon with a full party would be paid for and then lost.
+  const blocked = () => partyFull() || wallet.balance() < cost;
+
   const renderForm = () => {
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-head"><h2>✨ Summon Lab</h2><button class="summon-close" aria-label="Close">✕</button></div>
+        <div class="summon-head"><h2>✨ Summon Lab</h2><span class="shop-sprigs">🌱 ${wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
         <p class="summon-sub">Describe a critter and choose its element. The lab will bring it to life and add it to your party.</p>
         <div class="summon-elements">
           ${ELEMENTS.map(
@@ -46,9 +54,15 @@ export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
         <input class="summon-name" maxlength="24" placeholder="Name (optional, e.g. Zappup)">
         <textarea class="summon-desc" maxlength="200" rows="3" placeholder="Describe it: a spiky ember lizard with a lantern tail..."></textarea>
         <div class="summon-actions">
-          <button class="summon-go">Summon ✨</button>
+          <button class="summon-go"${blocked() ? " disabled" : ""}>Summon 🌱${cost}</button>
         </div>
-        <p class="summon-note">Uses live AI image generation (a few seconds, small cost). One at a time.</p>
+        <p class="summon-note">${
+          partyFull()
+            ? "Your party is full (6). Fuse two critters at the Wellspring to make room."
+            : wallet.balance() < cost
+              ? "Not enough Sprigs. Win battles to earn more."
+              : "Live AI image generation takes a little while. Sprigs are spent when the summon starts."
+        }</p>
       </div>`;
     root.querySelector(".summon-close")!.addEventListener("click", close);
     root.querySelectorAll<HTMLButtonElement>(".summon-el").forEach((b) =>
@@ -124,6 +138,10 @@ export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
       renderError("Describe your critter first (at least a few words).");
       return;
     }
+    if (blocked() || !wallet.spend(cost)) {
+      renderForm();
+      return;
+    }
     cancelled = false;
     const stopStatus = renderLoading();
     try {
@@ -135,7 +153,11 @@ export function openSummonLab(onSummoned: (c: CustomSpecies) => void) {
       renderPreview(spec);
     } catch (err) {
       stopStatus();
-      if (!cancelled) renderError((err as Error).message === "timed out" ? "That took too long. Try again." : "The summoning fizzled. Try again.");
+      // Closing mid-summon keeps the charge: the paid generation still ran.
+      if (!cancelled) {
+        wallet.refund(cost);
+        renderError((err as Error).message === "timed out" ? "That took too long. Your Sprigs were returned." : "The summoning fizzled. Your Sprigs were returned.");
+      }
     }
   }
 

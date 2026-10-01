@@ -361,9 +361,26 @@ function restAtHome() {
 }
 
 const FUSION_COST = 80; // Sprigs to fuse two critters into a hybrid
+const SUMMON_COST = 60; // Sprigs per summon: each one is a real paid image generation
+
+// The labs charge when a generation starts and refund only if it fails.
+const wallet = {
+  balance: () => sprigs,
+  spend(amount: number) {
+    if (sprigs < amount) return false;
+    sprigs -= amount;
+    drawHud();
+    persist();
+    return true;
+  },
+  refund(amount: number) {
+    sprigs += amount;
+    drawHud();
+    persist();
+  },
+};
 
 function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
-  sprigs -= FUSION_COST;
   registerCustom(spec);
   customOwned.push(spec);
   const level = Math.max(a.level, b.level);
@@ -440,10 +457,10 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
         close();
       } else if (act === "summon") {
         close();
-        openSummonLab(onSummoned);
+        openSummonLab(onSummoned, wallet, SUMMON_COST, () => team.length >= MAX_TEAM);
       } else if (act === "fuse") {
         close();
-        openFusionLab({ party: team, sprigs, cost: FUSION_COST, onFused });
+        openFusionLab({ party: team, wallet, cost: FUSION_COST, onFused });
       } else {
         close(); // leave
       }
