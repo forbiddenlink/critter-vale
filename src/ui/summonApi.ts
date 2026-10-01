@@ -35,7 +35,13 @@ export async function generateCritter(
   const genRun = await startOp({ op: "gen", description, element });
   const [raw] = await poll(genRun, cancelled);
   if (!raw) throw new Error("no image");
-  const bgRun = await startOp({ op: "bg", imageUrl: raw });
-  const [clean] = await poll(bgRun, cancelled);
-  return clean ?? raw;
+  // Background removal is a nicety: if the server refuses it (budget, throttle), keep the raw image.
+  try {
+    const bgRun = await startOp({ op: "bg", runId: genRun });
+    const [clean] = await poll(bgRun, cancelled);
+    return clean ?? raw;
+  } catch (err) {
+    if (cancelled()) throw err;
+    return raw;
+  }
 }

@@ -47,12 +47,16 @@ pnpm test          # vitest run
 ## Env vars
 
 `MAGICA_KEY` - server-side only, read in `api/summon.js`, never exposed to the client.
+`SUMMON_DAILY_CAP` - optional, paid Magica runs per instance per day (default 50).
 
 ## Gotchas
 
-- `api/summon.js` runs as a Vercel serverless function; its in-memory per-IP rate limit
-  (`HITS` map, 6 requests/60s) resets on every cold start and is best-effort only, not a
-  real limiter.
+- `api/summon.js` spend guards live in `api/_guard.js`: 6 paid POSTs per IP per minute, a
+  daily budget of paid runs (`SUMMON_DAILY_CAP`, default 50), and a same-origin check. All of
+  it is per warm instance and resets on cold start; a shared store (e.g. Upstash) is the real
+  limiter if traffic grows.
+- Background removal (`op:"bg"`) takes a gen `runId`, not an image URL: the server reads that
+  run's output itself, once per run, so the endpoint cannot clean arbitrary images.
 - `runId` values from the Magica API are validated against a strict allowlist
   (`/^[a-zA-Z0-9-]{16,64}$/`) before being used in a follow-up request, to stop a crafted
   value from reaching other Magica endpoints through the server's key.
