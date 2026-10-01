@@ -2,6 +2,13 @@
 // use this: start a gen, poll it, background-remove, poll again, return the final URL.
 import type { Element } from "../game/critters";
 
+/** In-game Sprigs, passed in by main.ts so the labs can charge before a paid generation. */
+export interface Wallet {
+  balance(): number;
+  spend(amount: number): boolean;
+  refund(amount: number): void;
+}
+
 async function startOp(body: Record<string, unknown>): Promise<string> {
   const r = await fetch("/api/summon", {
     method: "POST",
