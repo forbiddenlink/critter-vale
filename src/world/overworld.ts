@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
+import { InputState } from "../input";
 import { WILD_POOL } from "../game/critters";
 import type { Element } from "../game/critters";
 
@@ -183,7 +184,8 @@ export class Overworld {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   private player = makePlayerSprite();
-  private keys = new Set<string>();
+  /** Shared movement input: keyboard here, the touch joystick via `input` from main. */
+  readonly input = new InputState();
   private speed = 9;
   private stepCooldown = 0;
   private elapsed = 0;
@@ -224,10 +226,10 @@ export class Overworld {
 
     window.addEventListener("keydown", (e) => {
       const k = e.key.toLowerCase();
-      this.keys.add(k);
+      this.input.keyDown(k);
       if (k === "e" || k === " ") this.interact();
     });
-    window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+    window.addEventListener("keyup", (e) => this.input.keyUp(e.key));
     window.addEventListener("pointermove", (e) => {
       this.pointerNdc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       this.pointer.set(this.pointerNdc.x, this.pointerNdc.y);
@@ -519,18 +521,12 @@ export class Overworld {
     this.player.material.rotation = 0;
 
     if (!this.active) return;
-    let dx = 0;
-    let dz = 0;
-    if (this.keys.has("w") || this.keys.has("arrowup")) dz -= 1;
-    if (this.keys.has("s") || this.keys.has("arrowdown")) dz += 1;
-    if (this.keys.has("a") || this.keys.has("arrowleft")) dx -= 1;
-    if (this.keys.has("d") || this.keys.has("arrowright")) dx += 1;
+    const { x: dx, z: dz } = this.input.axis();
 
     const moving = dx !== 0 || dz !== 0;
     if (moving) {
-      const len = Math.hypot(dx, dz);
-      const nx = this.player.position.x + (dx / len) * this.speed * dt;
-      const nz = this.player.position.z + (dz / len) * this.speed * dt;
+      const nx = this.player.position.x + dx * this.speed * dt;
+      const nz = this.player.position.z + dz * this.speed * dt;
       this.player.position.x = THREE.MathUtils.clamp(nx, -WORLD + 2, WORLD - 2);
       this.player.position.z = THREE.MathUtils.clamp(nz, -WORLD + 2, WORLD - 2);
       this.player.position.y = 0.95 + Math.abs(Math.sin(this.elapsed * 10)) * 0.12;
@@ -611,7 +607,7 @@ export class Overworld {
   resume() {
     this.active = true;
     this.stepCooldown = 0.5;
-    this.keys.clear();
+    this.input.clear();
   }
 
   getPos(): { x: number; z: number } {

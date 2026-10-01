@@ -2,7 +2,7 @@
 // clauses) once localStorage is available, so we back it with an in-memory Storage
 // stand-in rather than pulling in jsdom for one file.
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { loadSave, writeSave, clearSave } from "./save";
+import { loadSave, writeSave, clearSave, readSave, validateSave } from "./save";
 import type { SaveData } from "./save";
 
 class MemoryStorage implements Storage {
@@ -125,5 +125,84 @@ describe("writeSave / clearSave failure tolerance", () => {
       throw new Error("storage disabled");
     };
     expect(() => clearSave()).not.toThrow();
+  });
+});
+
+describe("validateSave / readSave (DATA-001: a bad save must not brick the game)", () => {
+  const withTeam = (team: unknown): unknown => ({ ...sampleSave, team });
+
+  it("accepts a well-formed save untouched", () => {
+    expect(validateSave(sampleSave)).toEqual(sampleSave);
+  });
+
+  it("rejects an unknown species id (makeCritter would throw on it)", () => {
+    expect(validateSave(withTeam([{ id: "nopemon", level: 5, xp: 0, hp: 10 }]))).toBeNull();
+  });
+
+  it("accepts a team member whose species comes from the save's own custom list", () => {
+    const custom = {
+      id: "zorp-1",
+      name: "Zorp",
+      element: "Leaf",
+      baseHp: 40,
+      baseAtk: 10,
+      baseDef: 10,
+      catchRate: 1,
+      color: "#fff",
+      accent: "#000",
+      imageUrl: "https://example.com/z.png",
+      moves: [
+        { name: "A", power: 40, element: "Leaf" },
+        { name: "B", power: 30, element: "Normal" },
+      ],
+    };
+    const save = { ...sampleSave, team: [{ id: "zorp-1", level: 3, xp: 0, hp: 9 }], custom: [custom] };
+    expect(validateSave(save)).not.toBeNull();
+  });
+
+  it("rejects prototype-key species ids like constructor", () => {
+    expect(validateSave(withTeam([{ id: "constructor", level: 5, xp: 0, hp: 5 }]))).toBeNull();
+  });
+
+  it("rejects a missing or non-finite pos", () => {
+    expect(validateSave({ ...sampleSave, pos: undefined })).toBeNull();
+    expect(validateSave({ ...sampleSave, pos: { x: "a", z: 1 } })).toBeNull();
+    expect(validateSave({ ...sampleSave, pos: { x: NaN, z: 1 } })).toBeNull();
+  });
+
+  it("rejects bad levels, xp, and oversize teams", () => {
+    expect(validateSave(withTeam([{ id: "emberpup", level: 0, xp: 0, hp: 5 }]))).toBeNull();
+    expect(validateSave(withTeam([{ id: "emberpup", level: 2.5, xp: 0, hp: 5 }]))).toBeNull();
+    expect(validateSave(withTeam([{ id: "emberpup", level: 5, xp: -1, hp: 5 }]))).toBeNull();
+    const seven = Array.from({ length: 7 }, () => ({ id: "emberpup", level: 5, xp: 0, hp: 5 }));
+    expect(validateSave(withTeam(seven))).toBeNull();
+  });
+
+  it("rejects a non-object / null / array payload", () => {
+    expect(validateSave(null)).toBeNull();
+    expect(validateSave("save")).toBeNull();
+    expect(validateSave([])).toBeNull();
+  });
+
+  it("rejects wrong-typed optional fields", () => {
+    expect(validateSave({ ...sampleSave, sprigs: "lots" })).toBeNull();
+    expect(validateSave({ ...sampleSave, bag: { "dew-potion": "x" } })).toBeNull();
+    expect(validateSave({ ...sampleSave, crests: ["Plasma"] })).toBeNull();
+    expect(validateSave({ ...sampleSave, seen: [1, 2] })).toBeNull();
+  });
+
+  it("readSave reports none / ok / corrupt", () => {
+    expect(readSave()).toEqual({ status: "none" });
+    writeSave(sampleSave);
+    expect(readSave()).toEqual({ status: "ok", data: sampleSave });
+    memory.setItem(SAVE_KEY, "{not json");
+    expect(readSave()).toEqual({ status: "corrupt" });
+    memory.setItem(SAVE_KEY, JSON.stringify({ ...sampleSave, team: [{ id: "nopemon", level: 1, xp: 0 }] }));
+    expect(readSave()).toEqual({ status: "corrupt" });
+  });
+
+  it("an empty-team save is corrupt-or-none, never ok", () => {
+    memory.setItem(SAVE_KEY, JSON.stringify({ ...sampleSave, team: [] }));
+    expect(readSave().status).not.toBe("ok");
   });
 });
