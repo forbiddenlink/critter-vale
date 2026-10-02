@@ -497,7 +497,8 @@ export class Overworld {
       trunk.position.set(x, 1.3, z);
       trunk.castShadow = true;
       this.scene.add(trunk);
-      const green = 0x3f8a3f + Math.floor(Math.random() * 0x102000);
+      // HSL keeps every tree green; adding to a packed hex int carried across channels into navy/purple (VIS-001)
+      const green = new THREE.Color().setHSL(0.3 + Math.random() * 0.06, 0.4 + Math.random() * 0.1, 0.3 + Math.random() * 0.08);
       for (let l = 0; l < 3; l++) {
         const leaf = new THREE.Mesh(
           new THREE.IcosahedronGeometry(2.2 - l * 0.4, 0),
