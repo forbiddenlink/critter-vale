@@ -166,6 +166,7 @@ function persist() {
   });
 }
 
+world.partyTopLevel = () => team.reduce((top, m) => Math.max(top, m.level), 1);
 world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   seen.add(speciesId); // dex: encountered
@@ -628,6 +629,7 @@ function showTitle(notice?: string) {
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
+  title.querySelector<HTMLButtonElement>(".starter")?.focus(); // keyboard players land on the first partner, not the mute button
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {

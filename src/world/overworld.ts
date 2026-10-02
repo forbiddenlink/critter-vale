@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
 import { InputState } from "../input";
 import { WILD_POOL } from "../game/critters";
+import { wildLevel } from "../game/battleFlow";
 import type { Element } from "../game/critters";
 
 /** Scene layer that the selective-bloom pass treats as "glowing" (lanterns / emissive heroes). */
@@ -191,6 +192,8 @@ export class Overworld {
   private elapsed = 0;
   private windMats: THREE.Material[] = [];
   onEncounter: ((e: Encounter) => void) | null = null;
+  /** Strongest party level; wired by main so wild levels scale with the team. */
+  partyTopLevel: () => number = () => 6;
   onInteract: ((npc: Npc) => void) | null = null;
   onHeal: (() => void) | null = null;
   onEnterBuilding: ((b: Building) => void) | null = null;
@@ -494,7 +497,8 @@ export class Overworld {
       trunk.position.set(x, 1.3, z);
       trunk.castShadow = true;
       this.scene.add(trunk);
-      const green = 0x3f8a3f + Math.floor(Math.random() * 0x102000);
+      // HSL keeps every tree green; adding to a packed hex int carried across channels into navy/purple (VIS-001)
+      const green = new THREE.Color().setHSL(0.3 + Math.random() * 0.06, 0.4 + Math.random() * 0.1, 0.3 + Math.random() * 0.08);
       for (let l = 0; l < 3; l++) {
         const leaf = new THREE.Mesh(
           new THREE.IcosahedronGeometry(2.2 - l * 0.4, 0),
@@ -599,7 +603,7 @@ export class Overworld {
 
   private triggerEncounter() {
     const speciesId = WILD_POOL[Math.floor(Math.random() * WILD_POOL.length)];
-    const level = 3 + Math.floor(Math.random() * 5);
+    const level = wildLevel(this.partyTopLevel(), Math.random);
     this.active = false;
     this.onEncounter?.({ speciesId, level });
   }

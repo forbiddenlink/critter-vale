@@ -92,6 +92,7 @@ export function runBattle(
     </div>
   `;
   document.body.appendChild(root);
+  root.querySelector<HTMLButtonElement>(".move")?.focus(); // keyboard players start on the first move
 
   const flashEl = document.createElement("div");
   flashEl.className = "flash";
@@ -136,6 +137,8 @@ export function runBattle(
     if (!b) {
       const canSwitch = party.filter((m) => m.hp > 0 && m !== active).length > 0;
       (el("#switch") as HTMLButtonElement).disabled = !canSwitch;
+      // Disabling the buttons during a turn drops keyboard focus to <body>; hand it back to the first move.
+      if (!root.contains(document.activeElement)) root.querySelector<HTMLButtonElement>(".move:not(:disabled)")?.focus();
     }
   };
 
@@ -274,8 +277,15 @@ export function runBattle(
   const foeFaint = () => {
     // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
     const fainted = foe;
-    const { levels, next } = faintFoe(foes, active, fainted);
+    const { levels, benchLevels, next } = faintFoe(foes, active, fainted, party);
     announceXp(`${foeLabel(fainted)} fainted!`, levels);
+    for (const { critter, levels: gained } of benchLevels) {
+      if (gained > 0) {
+        log(`${critter.species.name} grew to Lv${critter.level}!`);
+        const evolvedTo = checkEvolution(critter);
+        if (evolvedTo) log(`What? ${critter.species.name} evolved!`);
+      }
+    }
     if (isTrainer && next) {
       setTimeout(() => {
         foe = next;
