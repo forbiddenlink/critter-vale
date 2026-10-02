@@ -629,6 +629,7 @@ function showTitle(notice?: string) {
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
+  title.querySelector<HTMLButtonElement>(".starter")?.focus(); // keyboard players land on the first partner, not the mute button
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
