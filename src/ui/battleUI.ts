@@ -274,8 +274,15 @@ export function runBattle(
   const foeFaint = () => {
     // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
     const fainted = foe;
-    const { levels, next } = faintFoe(foes, active, fainted);
+    const { levels, benchLevels, next } = faintFoe(foes, active, fainted, party);
     announceXp(`${foeLabel(fainted)} fainted!`, levels);
+    for (const { critter, levels: gained } of benchLevels) {
+      if (gained > 0) {
+        log(`${critter.species.name} grew to Lv${critter.level}!`);
+        const evolvedTo = checkEvolution(critter);
+        if (evolvedTo) log(`What? ${critter.species.name} evolved!`);
+      }
+    }
     if (isTrainer && next) {
       setTimeout(() => {
         foe = next;

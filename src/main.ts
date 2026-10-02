@@ -166,6 +166,7 @@ function persist() {
   });
 }
 
+world.partyTopLevel = () => team.reduce((top, m) => Math.max(top, m.level), 1);
 world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   seen.add(speciesId); // dex: encountered

@@ -5,6 +5,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
 import { InputState } from "../input";
 import { WILD_POOL } from "../game/critters";
+import { wildLevel } from "../game/battleFlow";
 import type { Element } from "../game/critters";
 
 /** Scene layer that the selective-bloom pass treats as "glowing" (lanterns / emissive heroes). */
@@ -191,6 +192,8 @@ export class Overworld {
   private elapsed = 0;
   private windMats: THREE.Material[] = [];
   onEncounter: ((e: Encounter) => void) | null = null;
+  /** Strongest party level; wired by main so wild levels scale with the team. */
+  partyTopLevel: () => number = () => 6;
   onInteract: ((npc: Npc) => void) | null = null;
   onHeal: (() => void) | null = null;
   onEnterBuilding: ((b: Building) => void) | null = null;
@@ -599,7 +602,7 @@ export class Overworld {
 
   private triggerEncounter() {
     const speciesId = WILD_POOL[Math.floor(Math.random() * WILD_POOL.length)];
-    const level = 3 + Math.floor(Math.random() * 5);
+    const level = wildLevel(this.partyTopLevel(), Math.random);
     this.active = false;
     this.onEncounter?.({ speciesId, level });
   }
