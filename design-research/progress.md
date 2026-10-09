@@ -4,9 +4,9 @@ Branch: `design/upgrade`. Never merge/deploy. Existing package.json, pnpm-lock.y
 
 | Phase | Status | Evidence / next action |
 |---|---|---|
-| 1 Understand | In progress | profile.md; baseline Chrome captures being completed |
-| 2 Research | In progress | source-index.json gallery provenance; live-sites.json browser observations |
-| 3 Decide | Pending | Produce one coherent game UI direction |
+| 1 Understand | Done | profile.md; 30 desktop/mobile baseline captures; 16b3400 |
+| 2 Research | Done with access limits | references.md: 13 live references, 4 outside gaming; features.md: 8 loaded peers; blocks documented |
+| 3 Decide | Done | plan.md: The Vale Field Journal; ranked non-destructive features and per-template plan |
 | 4 Foundation/title | Pending | Two screenshot/score/fix rounds required |
 | 5 All templates | Pending | Desktop/mobile and states for every template |
 | 6 Verify | Pending | Build, tsc, tests, lint availability, Lighthouse, browser journeys |

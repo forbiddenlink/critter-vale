@@ -1,0 +1,13 @@
+[
+  {
+    "id": "pokemon",
+    "url": "https://www.pokemon.com/us/pokedex",
+    "kind": "competitor",
+    "status": 200,
+    "finalUrl": "https://www.pokemon.com/us/pokedex",
+    "title": "",
+    "text": "",
+    "links": [],
+    "screenshot": "screenshots/references/pokemon.png"
+  }
+]
