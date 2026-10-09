@@ -3,7 +3,9 @@ import * as THREE from "three";
 import { Sky } from "three/addons/objects/Sky.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { makePlayerSprite, makeNpcSprite } from "./sprites";
+import { InputState } from "../input";
 import { WILD_POOL } from "../game/critters";
+import { wildLevel } from "../game/battleFlow";
 import type { Element } from "../game/critters";
 
 /** Scene layer that the selective-bloom pass treats as "glowing" (lanterns / emissive heroes). */
@@ -183,12 +185,15 @@ export class Overworld {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   private player = makePlayerSprite();
-  private keys = new Set<string>();
+  /** Shared movement input: keyboard here, the touch joystick via `input` from main. */
+  readonly input = new InputState();
   private speed = 9;
   private stepCooldown = 0;
   private elapsed = 0;
   private windMats: THREE.Material[] = [];
   onEncounter: ((e: Encounter) => void) | null = null;
+  /** Strongest party level; wired by main so wild levels scale with the team. */
+  partyTopLevel: () => number = () => 6;
   onInteract: ((npc: Npc) => void) | null = null;
   onHeal: (() => void) | null = null;
   onEnterBuilding: ((b: Building) => void) | null = null;
@@ -227,11 +232,11 @@ export class Overworld {
       if (this.inputBlocked() || (e.target instanceof HTMLElement && e.target.matches('input, textarea, select'))) return;
       const k = e.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "e", " "].includes(k)) e.preventDefault();
-      this.keys.add(k);
+      this.input.keyDown(k);
       if (k === "e" || k === " ") this.interact();
     });
-    window.addEventListener("keyup", (e) => this.keys.delete(e.key.toLowerCase()));
-    window.addEventListener("blur", () => this.keys.clear());
+    window.addEventListener("keyup", (e) => this.input.keyUp(e.key));
+    window.addEventListener("blur", () => this.input.clear());
     window.addEventListener("pointermove", (e) => {
       this.pointerNdc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       this.pointer.set(this.pointerNdc.x, this.pointerNdc.y);
@@ -496,7 +501,8 @@ export class Overworld {
       trunk.position.set(x, 1.3, z);
       trunk.castShadow = true;
       this.scene.add(trunk);
-      const green = 0x3f8a3f + Math.floor(Math.random() * 0x102000);
+      // HSL keeps every tree green; adding to a packed hex int carried across channels into navy/purple (VIS-001)
+      const green = new THREE.Color().setHSL(0.3 + Math.random() * 0.06, 0.4 + Math.random() * 0.1, 0.3 + Math.random() * 0.08);
       for (let l = 0; l < 3; l++) {
         const leaf = new THREE.Mesh(
           new THREE.IcosahedronGeometry(2.2 - l * 0.4, 0),
@@ -522,19 +528,13 @@ export class Overworld {
     // gentle sprite bob
     this.player.material.rotation = 0;
 
-    if (!this.active || this.inputBlocked()) { this.keys.clear(); return; }
-    let dx = 0;
-    let dz = 0;
-    if (this.keys.has("w") || this.keys.has("arrowup")) dz -= 1;
-    if (this.keys.has("s") || this.keys.has("arrowdown")) dz += 1;
-    if (this.keys.has("a") || this.keys.has("arrowleft")) dx -= 1;
-    if (this.keys.has("d") || this.keys.has("arrowright")) dx += 1;
+    if (!this.active || this.inputBlocked()) { this.input.clear(); return; }
+    const { x: dx, z: dz } = this.input.axis();
 
     const moving = dx !== 0 || dz !== 0;
     if (moving) {
-      const len = Math.hypot(dx, dz);
-      const nx = this.player.position.x + (dx / len) * this.speed * dt;
-      const nz = this.player.position.z + (dz / len) * this.speed * dt;
+      const nx = this.player.position.x + dx * this.speed * dt;
+      const nz = this.player.position.z + dz * this.speed * dt;
       this.player.position.x = THREE.MathUtils.clamp(nx, -WORLD + 2, WORLD - 2);
       this.player.position.z = THREE.MathUtils.clamp(nz, -WORLD + 2, WORLD - 2);
       this.player.position.y = 0.95 + Math.abs(Math.sin(this.elapsed * 10)) * 0.12;
@@ -607,7 +607,7 @@ export class Overworld {
 
   private triggerEncounter() {
     const speciesId = WILD_POOL[Math.floor(Math.random() * WILD_POOL.length)];
-    const level = 3 + Math.floor(Math.random() * 5);
+    const level = wildLevel(this.partyTopLevel(), Math.random);
     this.active = false;
     this.onEncounter?.({ speciesId, level });
   }
@@ -615,12 +615,12 @@ export class Overworld {
   resume() {
     this.active = true;
     this.stepCooldown = 0.5;
-    this.keys.clear();
+    this.input.clear();
   }
 
   setMovementKey(key: string, pressed: boolean): void {
-    if (!pressed) this.keys.delete(key);
-    else if (!this.inputBlocked() && this.active) this.keys.add(key);
+    if (!pressed) this.input.keyUp(key);
+    else if (!this.inputBlocked() && this.active) this.input.keyDown(key);
   }
 
   getPos(): { x: number; z: number } {
@@ -629,7 +629,7 @@ export class Overworld {
 
   /** Trigger the nearby interaction (talk / battle). Safe to call from a click or key. */
   interact() {
-    if (!this.active || this.inputBlocked()) { this.keys.clear(); return; }
+    if (!this.active || this.inputBlocked()) { this.input.clear(); return; }
     if (this.nearNpc) {
       this.active = false;
       this.onInteract?.(this.nearNpc);

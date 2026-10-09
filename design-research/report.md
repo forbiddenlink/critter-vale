@@ -94,3 +94,8 @@ A further full-party touch review found and fixed landscape HUD/control collisio
 ## Draft PR integration status
 
 The release-review base check found that this branch starts at `3fe9c2b`, while current `origin/main` is `4616d7f`. Main has API spend protection, Sprig charging, save/battle/input fixes, CI and dependency updates that have not been integrated here. The draft must preserve those changes during integration and repeat CI/browser verification before release. Recorded before screenshots use the original branch baseline, and the completed checks validate this upgrade branch rather than an integrated result with current main. See [PR description and acceptance checklist](pr-description.md).
+
+
+## Integrated-main verification
+
+Current main 4616d7f is now integrated; the earlier integration warning is historical. Node24 frozen install, build/typecheck and 115 tests pass. Fresh Chrome results: 60 clean screen states, 10 journey groups, four clean full-party touch layouts, and six generation-charge/save recovery regression groups. All generation mocked; isolated saves only. Evidence: integration-browser-verification.json, integration-journeys.json, integration-regressions.json, followup-integration.json and screenshots/integration/. Lighthouse title mobile94/desktop100, saved world mobile97/desktop100 performance; accessibility/best practices100 across all. Original browser/physical-device/paid-generation limits remain.

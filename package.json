@@ -1,6 +1,7 @@
 {
   "name": "critter-vale",
   "private": true,
+  "packageManager": "pnpm@10.34.5",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -10,12 +11,18 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/three": "^0.185.4",
-    "typescript": "~6.0.2",
-    "vite": "^8.2.0",
-    "vitest": "^4.1.10"
+    "@types/three": "0.186.0",
+    "nanoid": "3.3.19",
+    "typescript": "7.0.2",
+    "vite": "8.3.2",
+    "vitest": "5.0.3"
   },
   "dependencies": {
-    "three": "^0.185.1"
+    "three": "^0.186.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "nanoid@3": ">=3.3.18 <4.0.0"
+    }
   }
 }

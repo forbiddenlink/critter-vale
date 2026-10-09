@@ -8,9 +8,9 @@ Critter Vale's screens used inconsistent panels and controls, and exploration de
 - Fix full-party portrait/landscape control collisions and make party scrolling keyboard accessible.
 - Preserve routes, save schema, gameplay content and existing PNG sources. No new service or key.
 
-## Integration requirement — keep draft
+## Integrated upstream behavior — keep draft
 
-This branch starts from `3fe9c2b`; current `main` is `4616d7f`. Upstream includes summon API spend protection, Sprig charging, save/battle/input fixes, favicon changes, CI and dependency upgrades. Integrate those changes without losing their behavior, resolve conflicts, and rerun verification before considering release. The results below validate the upgrade branch, **not an integrated result with current main**. Baseline screenshots also depict `3fe9c2b`, not current main.
+Current main `4616d7f` is integrated. API spend protection, pre-generation Sprig charging/refunds, save recovery, battle-flow/input fixes, CI, favicon assets and dependency upgrades are preserved. Fresh verification below covers the integrated result on Node24. Baseline screenshots depict `3fe9c2b`; fresh integrated captures are in `design-research/screenshots/integration/`.
 
 Existing local Spector/debugger, root dependency edits and untracked user files are excluded from the pushed commits.
 
@@ -23,15 +23,16 @@ Existing local Spector/debugger, root dependency edits and untracked user files 
 
 | Starter screen | Touch landscape |
 |---|---|
-| ![Starter screen](https://github.com/forbiddenlink/critter-vale/blob/design/upgrade/design-research/screenshots/after/title-desktop.png?raw=true) | ![Full-party landscape](https://github.com/forbiddenlink/critter-vale/blob/design/upgrade/design-research/screenshots/after/followup-after-touch-landscape-small.png?raw=true) |
+| ![Starter screen](https://github.com/forbiddenlink/critter-vale/blob/design/upgrade/design-research/screenshots/integration/title-desktop.png?raw=true) | ![Full-party landscape](https://github.com/forbiddenlink/critter-vale/blob/design/upgrade/design-research/screenshots/integration/followup-integration-touch-landscape-small.png?raw=true) |
 
 ## Validation and release checklist
 
-- [x] Node 22.23.1: typecheck, production build and all 76 unit tests pass.
+- [x] Node 24.21.0: frozen dependency install, typecheck, production build and all 115 unit tests pass.
 - [x] 60 Chrome screen-state accessibility checks and 10 main journey groups pass using isolated fixtures.
 - [x] Four additional full-party touch layouts: no collisions, WCAG A/AA violations or browser errors; touch release, keyboard scrolling and focus wrapping pass.
-- [x] Lighthouse performance: title 95 mobile/100 desktop; saved world 97 mobile/100 desktop. Accessibility and best practices 100 throughout.
-- [ ] Integrate current main, preserve upstream safeguards and gameplay changes, then run its CI/runtime/dependency checks and repeat browser journeys.
+- [x] Integrated Lighthouse performance: title 94 mobile/100 desktop; saved world 97 mobile/100 desktop. Accessibility and best practices 100 throughout.
+- [x] Integrate current main and preserve upstream safeguards; repeat checks, browser journeys and six wallet/save regression groups with isolated mocks.
+- [ ] Confirm GitHub CI completes successfully for the integrated commit.
 - [ ] Play-test on physical iOS/Android and check Safari/Firefox; locally unavailable engines were not tested.
 - [ ] Approve and run a live summon/fusion smoke test using isolated game data. Existing generation uses paid credits; all completed tests used mocks.
 - [ ] Review production crawl policy before adding robots/sitemap endpoints. Local-preview SEO is 92 due to the HTML fallback for robots.txt.

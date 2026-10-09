@@ -1,0 +1,12 @@
+{
+  "passed": [
+    "Cancel keeps the generation charge, adds no creature, and saves the debit",
+    "Failed summon refunds once; retry retains draft; kept success charges once and adds to party",
+    "Full party blocks generation before API request or spend",
+    "Fusion refunds failure, preserves selections, charges successful generation once and saves hybrid",
+    "Insufficient Sprigs block a summon",
+    "Corrupt save displays the upstream recovery notice on the redesigned title"
+  ],
+  "errors": [],
+  "generation": "All API responses mocked; all saves isolated"
+}

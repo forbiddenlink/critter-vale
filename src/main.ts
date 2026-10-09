@@ -23,7 +23,7 @@ import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
 import type { Bag, ItemId } from "./game/items";
 import { sfx, startMusic, toggleMusic } from "./audio";
-import { loadSave, writeSave, clearSave } from "./game/save";
+import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 
 const app = document.querySelector<HTMLElement>("#app")!;
@@ -178,6 +178,7 @@ function persist() {
   });
 }
 
+world.partyTopLevel = () => team.reduce((top, m) => Math.max(top, m.level), 1);
 world.onEncounter = ({ speciesId, level }) => {
   sfx("encounter");
   seen.add(speciesId); // dex: encountered
@@ -340,7 +341,7 @@ function openShop() {
               <span class="shop-emoji">${it.emoji}</span>
               <span class="shop-info"><strong>${it.name}</strong><small>${it.desc}</small></span>
               <span class="shop-owned">x${owned}</span>
-              <button class="shop-buy" data-id="${id}"${afford ? "" : " disabled"}>🌱 ${it.price}</button>
+              <button class="shop-buy" data-id="${id}" aria-label="Buy ${it.name} for ${it.price} Sprigs"${afford ? "" : " disabled"}>🌱 ${it.price}</button>
             </div>`;
           }).join("")}
         </div>
@@ -381,9 +382,26 @@ function restAtHome() {
 }
 
 const FUSION_COST = 80; // Sprigs to fuse two critters into a hybrid
+const SUMMON_COST = 60; // Sprigs per summon: each one is a real paid image generation
+
+// The labs charge when a generation starts and refund only if it fails.
+const wallet = {
+  balance: () => sprigs,
+  spend(amount: number) {
+    if (sprigs < amount) return false;
+    sprigs -= amount;
+    drawHud();
+    persist();
+    return true;
+  },
+  refund(amount: number) {
+    sprigs += amount;
+    drawHud();
+    persist();
+  },
+};
 
 function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
-  sprigs -= FUSION_COST;
   registerCustom(spec);
   customOwned.push(spec);
   const level = Math.max(a.level, b.level);
@@ -462,10 +480,10 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
         close();
       } else if (act === "summon") {
         close();
-        openSummonLab(onSummoned, team.length >= MAX_TEAM);
+        openSummonLab(onSummoned, wallet, SUMMON_COST, () => team.length >= MAX_TEAM);
       } else if (act === "fuse") {
         close();
-        openFusionLab({ party: team, sprigs, cost: FUSION_COST, onFused });
+        openFusionLab({ party: team, wallet, cost: FUSION_COST, onFused });
       } else {
         close(); // leave
       }
@@ -548,6 +566,7 @@ const reset = document.createElement("button");
 reset.className = "mute reset";
 reset.textContent = "New game";
 reset.title = "New game (erases progress)";
+reset.setAttribute("aria-label", "New game (erases progress)");
 reset.addEventListener("click", () => {
   if (confirm("Start a new game? This erases your saved progress.")) {
     // Empty in-memory state FIRST so the beforeunload persist() no-ops and
@@ -564,6 +583,7 @@ const dexBtn = document.createElement("button");
 dexBtn.className = "mute dexbtn";
 dexBtn.textContent = "Critter-Dex";
 dexBtn.title = "Critter-Dex (C)";
+dexBtn.setAttribute("aria-label", "Open Critter-Dex");
 dexBtn.addEventListener("click", () => openDex(seen, caughtIds));
 document.body.appendChild(dexBtn);
 window.addEventListener("keydown", (e) => {
@@ -639,7 +659,7 @@ function resumeFromSave(s: SaveData) {
 }
 
 // --- title screen + starter select ---
-function showTitle() {
+function showTitle(notice?: string) {
   const title = document.createElement("div");
   title.className = "title";
   title.innerHTML = `
@@ -651,6 +671,7 @@ function showTitle() {
       </div>
       <div class="starter-heading"><h2>Choose your first partner</h2><span>THREE ELEMENTS. ONE FIRST FRIEND.</span></div>
       <span class="title-scroll-note">Scroll to meet all three partners ↓</span>
+      ${notice ? `<p class="notice" role="alert">${notice}</p>` : ""}
       <div class="starters">
         ${STARTERS.map((id, index) => {
           const s = SPECIES[id];
@@ -669,6 +690,7 @@ function showTitle() {
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
+  title.querySelector<HTMLButtonElement>(".starter")?.focus(); // keyboard players land on the first partner, not the mute button
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -688,9 +710,35 @@ function showTitle() {
   });
 }
 
-const existing = loadSave();
-if (existing) resumeFromSave(existing);
-else showTitle();
+const UNREADABLE_SAVE = "Your saved game could not be read, so we are starting fresh.";
+
+/** Undo whatever a half-finished resume put in memory, so the title screen starts clean. */
+function resetInMemoryState() {
+  team.length = 0;
+  caught.length = 0;
+  seen.clear();
+  caughtIds.clear();
+  customOwned.length = 0;
+  crests.clear();
+  beatenTrainers.clear();
+  for (const k of Object.keys(bag)) delete bag[k as ItemId];
+  sprigs = 0;
+  isChampion = false;
+}
+
+const saved = readSave();
+if (saved.status === "ok") {
+  try {
+    resumeFromSave(saved.data);
+  } catch (err) {
+    console.error("resumeFromSave failed", err);
+    resetInMemoryState();
+    showTitle(UNREADABLE_SAVE);
+  }
+} else {
+  showTitle(saved.status === "corrupt" ? UNREADABLE_SAVE : undefined);
+}
+
 
 const prompt = document.createElement("button");
 prompt.className = "prompt";

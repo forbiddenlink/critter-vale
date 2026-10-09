@@ -8,11 +8,10 @@ import {
   elementMultiplier,
   attemptCatch,
   effectiveCatchChance,
-  xpReward,
-  gainXp,
   checkEvolution,
 } from "../game/battle";
 import { spriteUrl } from "../game/customSpecies";
+import { switchOptions, reviveOptions, faintFoe } from "../game/battleFlow";
 import { ITEMS, consume, bagCount } from "../game/items";
 import type { Bag, ItemId } from "../game/items";
 import { quirkDef } from "../game/traits";
@@ -94,6 +93,7 @@ export function runBattle(
     </div>
   `;
   document.body.appendChild(root);
+  root.querySelector<HTMLButtonElement>(".move")?.focus(); // keyboard players start on the first move
 
   const flashEl = document.createElement("div");
   flashEl.className = "flash";
@@ -152,6 +152,8 @@ export function runBattle(
     if (!b) {
       const canSwitch = party.filter((m) => m.hp > 0 && m !== active).length > 0;
       (el("#switch") as HTMLButtonElement).disabled = !canSwitch;
+      // Disabling the buttons during a turn drops keyboard focus to <body>; hand it back to the first move.
+      if (!root.contains(document.activeElement)) root.querySelector<HTMLButtonElement>(".move:not(:disabled)")?.focus();
     }
   };
 
@@ -223,8 +225,7 @@ export function runBattle(
     );
   };
 
-  const grantXp = (via: string) => {
-    const levels = gainXp(active, Math.round(xpReward(foe) * quirkDef(active.quirk).xpMult));
+  const announceXp = (via: string, levels: number) => {
     if (levels > 0) {
       el("#allyLv").textContent = `Lv${active.level}`;
       flash("allyMon", "levelup");
@@ -246,30 +247,30 @@ export function runBattle(
   const openSwitchMenu = (forced: boolean) => {
     const menu = document.createElement("div");
     menu.className = "switch-menu";
-    const options = party.filter((m) => m.hp > 0 && m !== active);
+    const options = switchOptions(party, active);
     menu.innerHTML =
       `<div class="switch-title">${forced ? `${active.species.name} fainted! Send out...` : "Choose a critter"}</div>` +
       options
         .map(
-          (m) =>
-            `<button data-id="${m.species.id}" style="--c:${m.species.color}">
+          ({ index, critter: m }) =>
+            `<button data-i="${index}" style="--c:${m.species.color}">
                <img src="${spriteUrl(m.species.id)}" alt="">
                <span>${m.species.name} <small>Lv${m.level}</small></span>
                <span class="sw-hp">${m.hp}/${m.maxHp}</span>
              </button>`
         )
         .join("") +
-      (forced ? "" : `<button class="sw-cancel" data-id="">Back</button>`);
+      (forced ? "" : `<button class="sw-cancel" data-i="">Back</button>`);
     root.appendChild(menu);
     menu.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const id = btn.dataset.id;
+        const idx = btn.dataset.i;
         menu.remove();
-        if (!id) {
+        if (!idx) {
           setBusy(false);
           return;
         }
-        active = options.find((m) => m.species.id === id)!;
+        active = party[Number(idx)];
         renderActive();
         log(`Go, ${active.species.name}!`);
         if (forced) setBusy(false);
@@ -289,14 +290,25 @@ export function runBattle(
   };
 
   const foeFaint = () => {
-    const next = foes.find((m) => m.hp > 0);
+    // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
+    const fainted = foe;
+    const { levels, benchLevels, next } = faintFoe(foes, active, fainted, party);
+    announceXp(`${foeLabel(fainted)} fainted!`, levels);
+    for (const { critter, levels: gained } of benchLevels) {
+      if (gained > 0) {
+        log(`${critter.species.name} grew to Lv${critter.level}!`);
+        const evolvedTo = checkEvolution(critter);
+        if (evolvedTo) log(`What? ${critter.species.name} evolved!`);
+      }
+    }
     if (isTrainer && next) {
-      foe = next;
-      renderFoe();
-      log(`${opts.trainerName} sent out ${foe.species.name}!`);
-      setBusy(false);
+      setTimeout(() => {
+        foe = next;
+        renderFoe();
+        log(`${opts.trainerName} sent out ${foe.species.name}!`);
+        setBusy(false);
+      }, 900);
     } else {
-      grantXp(`${foeLabel(foe)} fainted!`);
       setTimeout(() => finish("won", null), 700);
     }
   };
@@ -394,7 +406,7 @@ export function runBattle(
 
   // revive a chosen fainted party member (costs a turn)
   const useRevive = (id: ItemId) => {
-    const fainted = party.filter((m) => m.hp <= 0);
+    const fainted = reviveOptions(party);
     if (!fainted.length) {
       log("No fainted critter to revive.");
       setBusy(false);
@@ -406,24 +418,24 @@ export function runBattle(
       `<div class="switch-title">Revive which critter?</div>` +
       fainted
         .map(
-          (m) =>
-            `<button data-id="${m.species.id}" style="--c:${m.species.color}">
+          ({ index, critter: m }) =>
+            `<button data-i="${index}" style="--c:${m.species.color}">
                <img src="${spriteUrl(m.species.id)}" alt="">
                <span>${m.species.name} <small>Lv${m.level}</small></span>
              </button>`
         )
         .join("") +
-      `<button class="sw-cancel" data-id="">Back</button>`;
+      `<button class="sw-cancel" data-i="">Back</button>`;
     root.appendChild(menu);
     menu.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const rid = btn.dataset.id;
+        const rid = btn.dataset.i;
         menu.remove();
         if (!rid) {
           setBusy(false);
           return;
         }
-        const target = fainted.find((m) => m.species.id === rid)!;
+        const target = party[Number(rid)];
         if (!consume(bag, id)) {
           setBusy(false);
           return;

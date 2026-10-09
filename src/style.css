@@ -8,6 +8,19 @@
   --glass-line: rgba(126, 196, 255, 0.35);
   --ink: #e7f1ff;
   --ink-dim: rgba(190, 214, 244, 0.7);
+  --ink-dark: #14202b; /* text on the light (white) battle/dex panels; body ink is near-white */
+  /* Notch / home-indicator insets (need viewport-fit=cover in index.html). The edge vars are the
+     gutter every fixed element keeps from the screen edge. */
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --edge-t: max(12px, var(--sat));
+  --edge-r: max(12px, var(--sar));
+  --edge-b: max(12px, var(--sab));
+  --edge-l: max(12px, var(--sal));
+  /* one top-right button row: 44px buttons on a 52px pitch, so everything else clears it by this much */
+  --topbar: calc(var(--edge-t) + 52px);
 }
 
 * { margin: 0; box-sizing: border-box; }
@@ -18,8 +31,8 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 /* glassmorphic neon HUD — aqua edge-glow */
 .hud {
   position: fixed;
-  top: 12px;
-  left: 12px;
+  top: var(--edge-t);
+  left: var(--edge-l);
   padding: 11px 15px;
   background: var(--glass);
   -webkit-backdrop-filter: blur(14px) saturate(1.3);
@@ -41,9 +54,10 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 .hud small { color: var(--ink-dim); }
 
 .mute {
+  --slot: 0;
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: var(--edge-t);
+  right: calc(var(--edge-r) + var(--slot) * 52px);
   width: 44px;
   height: 44px;
   font-size: 20px;
@@ -63,9 +77,12 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   box-shadow: 0 0 14px rgba(57, 198, 255, 0.55), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .mute:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
-.reset { right: 64px; font-size: 22px; }
+.reset { --slot: 1; font-size: 22px; }
 .reset:hover { border-color: var(--neon-ember); box-shadow: 0 0 14px rgba(255, 122, 69, 0.55), 0 6px 18px rgba(0, 0, 0, 0.4); }
-.dexbtn { right: 116px; font-size: 20px; }
+.dexbtn { --slot: 2; font-size: 20px; }
+/* New-game and Dex only make sense on the overworld: out of the way of every full-screen overlay
+   (and the reset button must never sit one stray tap from a battle). Mute stays reachable. */
+body:has(.battle, .title, .dex, .interior, .summon, .dialog, .faint, .victory) :is(.reset, .dexbtn) { display: none; }
 .dexbtn:hover { border-color: var(--neon-leaf); box-shadow: 0 0 14px rgba(107, 227, 107, 0.55), 0 6px 18px rgba(0, 0, 0, 0.4); }
 
 /* critter-dex */
@@ -76,13 +93,14 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--topbar) var(--edge-r) var(--edge-b) var(--edge-l);
   background: rgba(20, 32, 43, 0.72);
   backdrop-filter: blur(3px);
 }
 .dex-panel {
+  color: var(--ink-dark);
   width: min(920px, 100%);
-  max-height: 90vh;
+  max-height: 100%;
   overflow-y: auto;
   background: rgba(255, 255, 255, 0.97);
   border: 3px solid #14202b;
@@ -165,8 +183,9 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 /* transient toast (healing, etc.) — leaf neon glass */
 .toast {
   position: fixed;
-  top: 74px;
+  top: calc(var(--topbar) + 10px);
   left: 50%;
+  max-width: calc(100vw - var(--edge-l) - var(--edge-r));
   transform: translateX(-50%);
   padding: 12px 22px;
   background: var(--glass-strong);
@@ -215,7 +234,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   inset: auto 0 0 0;
   display: flex;
   justify-content: center;
-  padding: 0 16px 22px;
+  padding: 0 max(16px, var(--sar)) max(22px, var(--sab)) max(16px, var(--sal));
   z-index: 15;
   cursor: pointer;
 }
@@ -255,11 +274,13 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-y: auto; /* short phones: scroll instead of clipping the starters */
+  padding: var(--topbar) var(--edge-r) var(--edge-b) var(--edge-l);
   background: radial-gradient(circle at 50% 20%, #bfe8ff 0%, #79b7e6 55%, #3f6f9f 100%);
   transition: opacity 0.5s ease;
 }
 .title.fade { opacity: 0; }
-.title-inner { text-align: center; padding: 24px; }
+.title-inner { text-align: center; padding: 0 12px; margin: auto; }
 .title h1 {
   font-size: clamp(44px, 9vw, 96px);
   font-weight: 900;
@@ -269,6 +290,16 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   margin-bottom: 6px;
 }
 .title p { font-size: 19px; font-weight: 700; color: #16324a; margin-bottom: 22px; }
+.title .notice {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #5a1a0e;
+  background: #fff1e6;
+  border: 2px solid #b4491f;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
 .title .hint { font-size: 14px; font-weight: 600; color: #274b63; margin-top: 20px; opacity: 0.85; }
 .starters { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
 .starter {
@@ -306,6 +337,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  padding: 0 var(--sar) 0 var(--sal);
   background: radial-gradient(circle at 50% 30%, #cfeeff 0%, #7fb7e6 70%, #4f7fb0 100%);
   z-index: 10;
 }
@@ -320,6 +352,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   padding: 4px 10px;
   font-weight: 700;
   font-size: 15px;
+  color: var(--ink-dark);
 }
 .nameplate small { font-weight: 600; color: #567; }
 .hpbar {
@@ -442,6 +475,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 
 /* party switch menu */
 .switch-menu {
+  color: var(--ink-dark);
   position: absolute;
   inset: 0;
   z-index: 6;
@@ -487,6 +521,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
 }
 
 .log {
+  color: var(--ink-dark);
   padding: 14px 18px;
   background: rgba(255, 255, 255, 0.94);
   border-top: 3px solid #14202b;
@@ -498,7 +533,7 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 10px;
-  padding: 12px 18px 22px;
+  padding: 12px 18px max(22px, var(--sab));
   background: rgba(255, 255, 255, 0.94);
 }
 .moves { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -568,13 +603,15 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: var(--topbar) var(--edge-r) var(--edge-b) var(--edge-l);
   background: rgba(8, 14, 26, 0.78);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
 }
 .io-panel {
   width: min(560px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
   background: var(--glass-strong);
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
   backdrop-filter: blur(16px) saturate(1.3);
@@ -842,8 +879,9 @@ body { font-family: system-ui, "Segoe UI", sans-serif; color: var(--ink); }
   box-shadow: 0 0 18px rgba(57, 198, 255, 0.5);
   transition: transform 0.1s ease, box-shadow 0.18s ease;
 }
-.summon-go:hover { box-shadow: 0 0 26px rgba(57, 198, 255, 0.8); }
-.summon-go:active { transform: translateY(2px); }
+.summon-go:hover:not(:disabled) { box-shadow: 0 0 26px rgba(57, 198, 255, 0.8); }
+.summon-go:active:not(:disabled) { transform: translateY(2px); }
+.summon-go:disabled { opacity: 0.5; cursor: default; }
 .summon-discard {
   padding: 13px 18px;
   font-size: 15px;

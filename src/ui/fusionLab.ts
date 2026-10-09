@@ -4,7 +4,7 @@
 import type { Critter } from "../game/battle";
 import { fuseSpecies, spriteUrl } from "../game/customSpecies";
 import type { CustomSpecies } from "../game/customSpecies";
-import { generateCritter } from "./summonApi";
+import { generateCritter, type Wallet } from "./summonApi";
 
 const STATUS_LINES = [
   "The Wellspring stirs...",
@@ -15,7 +15,7 @@ const STATUS_LINES = [
 
 interface FusionCtx {
   party: Critter[];
-  sprigs: number;
+  wallet: Wallet;
   cost: number;
   onFused: (a: Critter, b: Critter, spec: CustomSpecies) => void;
 }
@@ -46,10 +46,10 @@ export function openFusionLab(ctx: FusionCtx) {
       root.querySelector(".summon-close")!.addEventListener("click", close);
       return;
     }
-    const canFuse = sel.length === 2 && ctx.sprigs >= ctx.cost;
+    const canFuse = sel.length === 2 && ctx.wallet.balance() >= ctx.cost;
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-head"><h2>Wellspring Fusion</h2><span class="shop-sprigs">🌱 ${ctx.sprigs}</span><button class="summon-close" aria-label="Close">✕</button></div>
+        <div class="summon-head"><h2>Wellspring Fusion</h2><span class="shop-sprigs">🌱 ${ctx.wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
         <p class="summon-sub">Choose two critters. The Wellspring will merge them into one new hybrid. <strong>The two originals are consumed.</strong></p>
         <div class="fusion-grid">
           ${ctx.party
@@ -69,7 +69,7 @@ export function openFusionLab(ctx: FusionCtx) {
           <button class="summon-go" data-act="fuse"${canFuse ? "" : " disabled"}>Fuse 🌱${ctx.cost}</button>
         </div>
         <p class="summon-note">${
-          ctx.sprigs < ctx.cost ? "Not enough Sprigs." : "Parent A's element and quirk carry into the hybrid."
+          ctx.wallet.balance() < ctx.cost ? "Not enough Sprigs." : "Parent A's element and quirk carry into the hybrid."
         }</p>
       </div>`;
     root.querySelector(".summon-close")!.addEventListener("click", close);
@@ -143,9 +143,11 @@ export function openFusionLab(ctx: FusionCtx) {
   };
 
   async function onFuse() {
-    if (sel.length !== 2 || ctx.sprigs < ctx.cost) return;
+    if (sel.length !== 2 || ctx.wallet.balance() < ctx.cost) return;
     const a = ctx.party[sel[0]];
     const b = ctx.party[sel[1]];
+    // Charge before the paid generation, so closing the preview is not a free reroll.
+    if (!ctx.wallet.spend(ctx.cost)) return;
     cancelled = false;
     const stopStatus = renderLoading();
     try {
@@ -156,8 +158,10 @@ export function openFusionLab(ctx: FusionCtx) {
       renderPreview(fuseSpecies(a, b, url), a, b);
     } catch (err) {
       stopStatus();
-      if (!cancelled)
-        renderError((err as Error).message === "timed out" ? "That took too long. Try again." : "The fusion fizzled. Try again.");
+      if (!cancelled) {
+        ctx.wallet.refund(ctx.cost);
+        renderError((err as Error).message === "timed out" ? "That took too long. Your Sprigs were returned." : "The fusion fizzled. Your Sprigs were returned.");
+      }
     }
   }
 
