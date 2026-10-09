@@ -28,14 +28,24 @@ export function faintFoe(
   fainted: Critter,
   party: Critter[] = []
 ): { levels: number; benchLevels: { critter: Critter; levels: number }[]; next: Critter | null } {
-  const reward = xpReward(fainted);
+  const earned = awardBattleXp(active, fainted, party);
+  const next = foes.find((m) => m.hp > 0) ?? null;
+  return { ...earned, next };
+}
+
+/** Defeating or capturing a critter rewards the active partner and living bench. */
+export function awardBattleXp(
+  active: Critter,
+  defeated: Critter,
+  party: Critter[]
+): { levels: number; benchLevels: { critter: Critter; levels: number }[] } {
+  const reward = xpReward(defeated);
   const levels = gainXp(active, Math.round(reward * quirkDef(active.quirk).xpMult));
   // Benched, still-standing teammates share part of the XP so a rotating team is not left behind.
   const benchLevels = party
     .filter((m) => m !== active && m.hp > 0)
     .map((critter) => ({ critter, levels: gainXp(critter, Math.floor(reward * BENCH_XP_SHARE * quirkDef(critter.quirk).xpMult)) }));
-  const next = foes.find((m) => m.hp > 0) ?? null;
-  return { levels, benchLevels, next };
+  return { levels, benchLevels };
 }
 
 /** Fraction of a foe's XP that each living benched teammate earns (GAM-001). */

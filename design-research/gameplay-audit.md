@@ -18,6 +18,7 @@ Baseline: integrated design branch 80d5f1c (game code also matches isolated chec
 | High | No way to choose a healthy lead before a no-switch trial | Battle picks first healthy party member; failing choose-lead regression | Add reversible lead selection to existing party HUD; reuse existing team order/save schema |
 | Medium | Escape dismissing trainer dialogue starts combat | Failing escape-trainer regression; close always calls afterDialog | Separate cancellation from completing dialogue; keep normal battle continuation |
 | Medium | Potion says it restored 40 HP when only 5 was missing | Failing accurate-healing browser regression | Report actual restored HP |
+| Medium | XP can exceed the save validator’s level-100 limit | Two failing unit tests: reward at level100 or across level99 makes progression invalid | Cap earned levels at the existing limit and clear unused max-level XP; tests now pass |
 | High | Evolution/progression pacing needs a deliberate balance pass | 3,608 XP from Lv6 to Lv12; estimated 53 wins at uniform capped Lv8–11 wild band (optimistic early, no trainer XP or XP quirk). Wild band stops scaling above party Lv10. | Recommend a bounded shorter progression curve; defer numerical rebalance until end-to-end evidence and approval of gameplay changes |
 | High | Move choices mostly collapse to the element triangle | 45 built-in species/target-element comparisons at Lv12: elemental move wins 30; Normal wins the 15 resisted matchups. Enemy always uses slot 0. No status/PP/speed decision in current move model. | Future battle-system work; no new schema or untested mechanics in this patch |
 | High | Generated critters lack progression depth | Summons have no evolution, start at Lv7, and share elemental + Normal move pattern; fusion keeps parent A's element and generic moves | Future generation/game-design work; asset volume alone does not solve this |
@@ -34,3 +35,10 @@ Fix capture rewards, accidental trainer engagement and inaccurate healing messag
 1. Finish baseline progression or record the exact blocker; do not claim Champion coverage from a high-level fixture.
 2. Run failing tests, implement safe fixes, then repeat browser state/touch/journey checks and build/unit suite.
 3. Update this document with observed end-to-end outcome, ranked roadmap, screenshots and remaining limits. Keep PR draft; never merge.
+
+
+## Implemented and verified
+
+Capture and defeat share the existing reward calculation; caught critter HP is preserved. Living bench members earn their existing share, fainted partners earn none, and both active and bench evolutions run after capture. The party HUD offers persistent Lead selection, element/quirk and XP progress without changing save schema. Escape cancels trainer dialogue, potions report actual HP, and XP stops at the validator’s level100 limit. Native Space/Enter on focused controls no longer also interacts with the world.
+
+Verification: 118 unit tests; typecheck; production build; five isolated browser regressions (including active/bench evolution and saved no-switch lead); 60 desktop/mobile states with zero automated WCAG A/AA violations/page errors; four full-party touch layouts with no collisions. No standalone linter is configured, Qlty requires missing project config. Initial post-fix production Lighthouse: title95 mobile/100 desktop, world95/100, accessibility and best practices100 throughout. Concurrent progression Chrome was running; a quieter world recheck is pending. Screenshots in screenshots/gameplay and screenshots/integration are actual Chrome captures. Manual patch review found no changes to generation API guards, dependencies or save format. Automated accessibility does not make the graphical overworld fully accessible to nonvisual players.

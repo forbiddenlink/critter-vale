@@ -1,6 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { makeCritter, xpReward } from "./battle";
-import { switchOptions, reviveOptions, faintFoe, wildLevel, BENCH_XP_SHARE } from "./battleFlow";
+import { switchOptions, reviveOptions, faintFoe, awardBattleXp, wildLevel, BENCH_XP_SHARE } from "./battleFlow";
+
+describe("capture rewards", () => {
+  it("rewards a living capture without changing its HP and skips fainted bench members", () => {
+    const active = makeCritter("emberpup", 6, "brightdream");
+    const bench = makeCritter("tadmite", 6, "none");
+    const down = makeCritter("leaflet", 6, "none");
+    down.hp = 0;
+    const captured = makeCritter("mothbit", 6, "none");
+    captured.hp = 8;
+    awardBattleXp(active, captured, [active, bench, down]);
+    expect(active.xp).toBe(68);
+    expect(bench.xp).toBe(22);
+    expect(down.xp).toBe(0);
+    expect(captured.hp).toBe(8);
+  });
+});
 
 describe("faintFoe (GAM-002: XP on every foe faint)", () => {
   it("grants XP for each foe in a trainer party, not just the last", () => {

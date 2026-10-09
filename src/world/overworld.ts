@@ -230,6 +230,7 @@ export class Overworld {
 
     window.addEventListener("keydown", (e) => {
       if (this.inputBlocked() || (e.target instanceof HTMLElement && e.target.matches('input, textarea, select'))) return;
+      if ((e.key === " " || e.key === "Enter") && e.target instanceof HTMLElement && e.target.closest('button, a[href], summary')) return;
       const k = e.key.toLowerCase();
       if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "e", " "].includes(k)) e.preventDefault();
       this.input.keyDown(k);

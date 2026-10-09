@@ -12,6 +12,22 @@ import {
   checkEvolution,
 } from "./battle";
 import { SPECIES } from "./critters";
+import { validateSave } from "./save";
+
+describe("maximum-level progression keeps saves resumable", () => {
+  it("keeps a level-100 partner valid after earning more XP", () => {
+    const critter = makeCritter("emberwulf", 100, "none");
+    gainXp(critter, 80_000);
+    expect(validateSave({ team: [{ id: critter.species.id, level: critter.level, xp: critter.xp, hp: critter.hp }], caught: [], pos: { x: 0, z: 0 } })).not.toBeNull();
+  });
+
+  it("stops at the save system's level limit when a reward spans several levels", () => {
+    const critter = makeCritter("emberwulf", 99, "none");
+    expect(gainXp(critter, 200_000)).toBe(1);
+    expect(critter.level).toBe(100);
+    expect(critter.xp).toBe(0);
+  });
+});
 
 describe("elementMultiplier (Ember > Leaf > Aqua > Ember)", () => {
   it("is 2x on advantage", () => {

@@ -166,7 +166,7 @@ export function xpToNext(level: number): number {
 export function gainXp(c: Critter, amount: number): number {
   let gained = 0;
   c.xp += amount;
-  while (c.xp >= xpToNext(c.level)) {
+  while (c.level < 100 && c.xp >= xpToNext(c.level)) {
     c.xp -= xpToNext(c.level);
     c.level += 1;
     gained += 1;
@@ -177,6 +177,7 @@ export function gainXp(c: Critter, amount: number): number {
     c.def = fresh.def;
     c.hp = Math.min(c.maxHp, c.hp + Math.max(0, hpGain));
   }
+  if (c.level >= 100) c.xp = 0;
   return gained;
 }
 

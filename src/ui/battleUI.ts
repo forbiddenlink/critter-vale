@@ -11,7 +11,7 @@ import {
   checkEvolution,
 } from "../game/battle";
 import { spriteUrl } from "../game/customSpecies";
-import { switchOptions, reviveOptions, faintFoe } from "../game/battleFlow";
+import { switchOptions, reviveOptions, faintFoe, awardBattleXp } from "../game/battleFlow";
 import { ITEMS, consume, bagCount } from "../game/items";
 import type { Bag, ItemId } from "../game/items";
 import { quirkDef } from "../game/traits";
@@ -289,11 +289,8 @@ export function runBattle(
     }
   };
 
-  const foeFaint = () => {
-    // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
-    const fainted = foe;
-    const { levels, benchLevels, next } = faintFoe(foes, active, fainted, party);
-    announceXp(`${foeLabel(fainted)} fainted!`, levels);
+  const announceRewards = (via: string, { levels, benchLevels }: ReturnType<typeof awardBattleXp>): void => {
+    announceXp(via, levels);
     for (const { critter, levels: gained } of benchLevels) {
       if (gained > 0) {
         log(`${critter.species.name} grew to Lv${critter.level}!`);
@@ -301,6 +298,14 @@ export function runBattle(
         if (evolvedTo) log(`What? ${critter.species.name} evolved!`);
       }
     }
+    drawHp();
+  };
+
+  const foeFaint = () => {
+    // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
+    const earned = faintFoe(foes, active, foe, party);
+    announceRewards(`${foeLabel(foe)} fainted!`, earned);
+    const { next } = earned;
     if (isTrainer && next) {
       setTimeout(() => {
         foe = next;
@@ -376,7 +381,7 @@ export function runBattle(
       sfx("catch");
       catchConfetti();
       setTimeout(() => {
-        log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
+        announceRewards(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`, awardBattleXp(active, foe, party));
         setTimeout(() => finish("caught", foe), 700);
       }, 400);
     } else {
@@ -396,7 +401,7 @@ export function runBattle(
       setBusy(false);
       return;
     }
-    const heal = ITEMS[id].power;
+    const heal = Math.min(ITEMS[id].power, active.maxHp - active.hp);
     active.hp = Math.min(active.maxHp, active.hp + heal);
     drawHp();
     log(`${active.species.name} recovered ${heal} HP!`);

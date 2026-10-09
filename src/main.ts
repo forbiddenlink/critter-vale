@@ -10,7 +10,7 @@ import { openFieldGuide } from "./ui/fieldGuide";
 import { spriteUrl } from "./game/customSpecies";
 import { Overworld, BLOOM_LAYER } from "./world/overworld";
 import type { Npc } from "./world/overworld";
-import { makeCritter } from "./game/battle";
+import { makeCritter, xpToNext } from "./game/battle";
 import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
 import type { Element } from "./game/critters";
@@ -25,6 +25,7 @@ import type { Bag, ItemId } from "./game/items";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
+import { quirkDef } from "./game/traits";
 
 const app = document.querySelector<HTMLElement>("#app")!;
 installOverlayAccessibility();
@@ -135,6 +136,18 @@ hud.className = "hud";
 hud.addEventListener("keydown", (event: KeyboardEvent): void => {
   if (event.key.startsWith("Arrow")) event.stopPropagation();
 });
+hud.addEventListener("click", (event: MouseEvent): void => {
+  const button = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>(".party-lead") : null;
+  if (!button || world.inputBlocked()) return;
+  const index = Number(button.dataset.index);
+  if (!Number.isInteger(index) || index < 0 || index >= team.length || team[index].hp <= 0) return;
+  const [partner] = team.splice(index, 1);
+  team.unshift(partner);
+  drawHud();
+  persist();
+  showToast(`${partner.species.name} will lead your next battle.`);
+  hud.querySelector<HTMLElement>(".hud-party")?.focus({ preventScroll: true });
+});
 document.body.appendChild(hud);
 
 const mute = document.createElement("button");
@@ -153,10 +166,11 @@ document.body.appendChild(mute);
 function drawHud() {
   if (!team.length) return;
   const objective = isChampion ? "Champion of the Vale. Keep discovering." : crests.size === 3 ? "Challenge Champion Sol at the Wellspring." : caughtIds.size < 2 ? "Find your next partner in the tall grass." : `Earn the Warden crests · ${crests.size} / 3`;
+  const leadIndex = team.findIndex((m) => m.hp > 0);
   hud.innerHTML = `<div class="hud-heading"><strong>Critter Vale<span aria-hidden="true">✳</span></strong><span class="hud-location">SPROUT HOLLOW</span></div>
     <div class="hud-resources"><span>${sprigs} <small>Sprigs</small></span><span>${caughtIds.size} <small>caught</small></span><span>${crests.size}/3 <small>crests</small></span></div>
     <div class="hud-party-title">YOUR TEAM <span>${team.length} / ${MAX_TEAM}</span></div>
-    <div class="hud-party" role="region" aria-label="Your party" tabindex="0">${team.map((m) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div></div><small>${m.hp}/${m.maxHp}</small></div>`).join("")}</div>
+    <div class="hud-party" role="region" aria-label="Your party" tabindex="0">${team.map((m, index) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div><p class="party-trait">${m.species.element} · ${quirkDef(m.quirk).name}</p><p class="party-xp">${m.level >= 100 ? "Max level" : `${m.xp} / ${xpToNext(m.level)} XP to Lv ${m.level + 1}`}</p></div><small>${m.hp}/${m.maxHp}</small><button class="party-lead" data-index="${index}" aria-label="${index === leadIndex ? `${m.species.name} leads your next battle` : `Make ${m.species.name} your lead critter`}"${index === leadIndex || m.hp <= 0 ? " disabled" : ""}>${index === leadIndex ? "Leading" : m.hp <= 0 ? "Fainted" : "Lead"}</button></div>`).join("")}</div>
     <div class="hud-objective"><span class="eyebrow">NEXT IN YOUR JOURNAL</span><p>${objective}</p></div>
     <details class="hud-notes"><summary>Trail notes &amp; controls</summary><p>Caught: ${caught.length ? caught.join(", ") : "none yet"}</p><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small><p>Ember ${crests.has("Ember") ? "✓" : "—"} · Aqua ${crests.has("Aqua") ? "✓" : "—"} · Leaf ${crests.has("Leaf") ? "✓" : "—"}</p></details>`;
 }
@@ -268,14 +282,15 @@ world.onInteract = (npc) => {
     if (!gated && npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
     else world.resume();
   };
-  const close = () => {
+  const close = (engage = false) => {
     d.remove();
     window.removeEventListener("keydown", onKey);
-    afterDialog();
+    if (engage) afterDialog();
+    else world.resume();
   };
   const advance = () => {
     i += 1;
-    if (i >= lines.length) close();
+    if (i >= lines.length) close(true);
     else render();
   };
   const onKey = (e: KeyboardEvent) => {

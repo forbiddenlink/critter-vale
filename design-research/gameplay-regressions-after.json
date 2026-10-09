@@ -1,0 +1,22 @@
+[
+  {
+    "test": "escape-trainer",
+    "status": "passed"
+  },
+  {
+    "test": "capture-xp",
+    "status": "passed"
+  },
+  {
+    "test": "capture-evolution",
+    "status": "passed"
+  },
+  {
+    "test": "accurate-healing",
+    "status": "passed"
+  },
+  {
+    "test": "choose-lead",
+    "status": "passed"
+  }
+]
