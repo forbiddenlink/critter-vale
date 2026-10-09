@@ -5,6 +5,7 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
+import { installOverlayAccessibility } from "./ui/accessibility";
 import { Overworld, BLOOM_LAYER } from "./world/overworld";
 import type { Npc } from "./world/overworld";
 import { makeCritter } from "./game/battle";
@@ -24,6 +25,7 @@ import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
+installOverlayAccessibility();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -590,25 +592,35 @@ function showTitle() {
   title.className = "title";
   title.innerHTML = `
     <div class="title-inner">
-      <h1>Critter Vale</h1>
-      <p>Choose your first partner</p>
+      <header class="title-masthead"><span class="wordmark">CV<span class="brand-sprout" aria-hidden="true">✳</span></span><span>THE VALE FIELD JOURNAL</span><span class="edition">A creature-collecting adventure</span></header>
+      <div class="title-intro">
+        <div><span class="eyebrow">YOUR ADVENTURE STARTS SMALL</span><h1>Critter <em>Vale.</em></h1></div>
+        <p>A curious world. A little wild company.<br>Explore the Vale, raise your team, and find<br class="desktop-break"> a partner for every adventure.</p>
+      </div>
+      <div class="starter-heading"><h2>Choose your first partner</h2><span>THREE ELEMENTS. ONE FIRST FRIEND.</span></div>
+      <span class="title-scroll-note">Scroll to meet all three partners ↓</span>
       <div class="starters">
-        ${STARTERS.map((id) => {
+        ${STARTERS.map((id, index) => {
           const s = SPECIES[id];
-          return `<button class="starter holo" data-id="${id}" style="--c:${s.color}">
-            <img src="/sprites/${id}.png" alt="">
-            <span class="s-name">${s.name}</span>
-            <span class="s-el">${s.element}</span>
+          const strength = s.element === "Ember" ? "Leaf" : s.element === "Aqua" ? "Ember" : "Aqua";
+          const temperament = s.element === "Ember" ? "A spark of possibility." : s.element === "Aqua" ? "Go with the current." : "Room to grow wild.";
+          return `<button class="starter holo" data-id="${id}" style="--c:${s.color}" aria-label="Begin with ${s.name}, ${s.element} element">
+            <span class="specimen-index">PARTNER 0${index + 1}<span class="s-el">${s.element}</span></span>
+            <span class="specimen-art"><img src="/sprites/${id}.png" width="240" height="240" alt="" fetchpriority="high"></span>
+            <span class="specimen-copy"><span class="s-name">${s.name}</span><span class="s-description">${temperament}</span></span>
+            <span class="starter-facts"><span>Strong against ${strength}</span><span>Lv 6</span></span>
+            <span class="starter-cta">Begin with ${s.name}<span aria-hidden="true">↗</span></span>
           </button>`;
         }).join("")}
       </div>
-      <p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p>
+      <footer class="title-footer"><p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p><p><kbd>WASD</kbd> move <span>·</span> <kbd>E</kbd> interact <span>·</span> Touch controls on mobile</p><small>Progress saves in this browser. No account needed.</small></footer>
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (team.length) return;
       team.push(makeCritter(btn.dataset.id!, 6));
       Object.assign(bag, starterBag()); // Prof. Hollis's starting kit
       sprigs = STARTER_SPRIGS;
@@ -645,7 +657,7 @@ function loop(now: number) {
   } else {
     prompt.classList.remove("show");
   }
-  renderScene();
+  if (!document.hidden && !document.querySelector(".title, .battle, .faint, .victory")) renderScene();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

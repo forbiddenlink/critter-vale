@@ -7,8 +7,8 @@ Branch: `design/upgrade`. Never merge/deploy. Existing package.json, pnpm-lock.y
 | 1 Understand | Done | profile.md; 30 desktop/mobile baseline captures; 16b3400 |
 | 2 Research | Done with access limits | references.md: 13 live references, 4 outside gaming; features.md: 8 loaded peers; blocks documented |
 | 3 Decide | Done | plan.md: The Vale Field Journal; ranked non-destructive features and per-template plan |
-| 4 Foundation/title | Pending | Two screenshot/score/fix rounds required |
-| 5 All templates | Pending | Desktop/mobile and states for every template |
+| 4 Foundation/title | Done | Shared tokens/panels/focus behavior; title-review.md records two Chrome rounds and fixes; tsc + 76 tests passed |
+| 5 All templates | In progress | Foundation applied; implement HUD/guide/touch, Dex tools, battle cues, lab state improvements, then capture all templates |
 | 6 Verify | Pending | Build, tsc, tests, lint availability, Lighthouse, browser journeys |
 | 7 Report | Pending | Before/after evidence, scores and limitations |
 
