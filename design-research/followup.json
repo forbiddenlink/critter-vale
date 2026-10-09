@@ -1,0 +1,35 @@
+[
+  {
+    "name": "touch-portrait",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "hudOverlapsMovement": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "errors": []
+  },
+  {
+    "name": "touch-landscape",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "hudOverlapsMovement": true,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "errors": []
+  },
+  {
+    "name": "touch-small",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "hudOverlapsMovement": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "errors": []
+  }
+]

@@ -23,7 +23,7 @@ Real Chrome against the production preview at 127.0.0.1:4174. Default simulated 
 |---|---|---:|---:|---:|---:|
 | First visit/title | Mobile | 95 | 100 | 100 | 92 |
 | First visit/title | Desktop | 100 | 100 | 100 | 92 |
-| Saved adventure/overworld | Mobile | 99 | 100 | 100 | Not requested |
+| Saved adventure/overworld | Mobile | 97 | 100 | 100 | Not requested |
 | Saved adventure/overworld | Desktop | 100 | 100 | 100 | Not requested |
 
 Title first-pass mobile performance was 79 with 5.3s simulated LCP. Compressed title-only copies reduced three sprite requests from about 532 kB to 105 kB; the subsequent pass reached 95 with 2.7s LCP, 50ms blocking time and zero layout shift. This is an iteration comparison, not an original-site Lighthouse baseline. The first desktop invocation incorrectly used a CLI preset flag with the programmatic API; it was corrected to the official desktop configuration before recording final results.
@@ -38,3 +38,9 @@ Lighthouse exposed visible/accessibility label mismatch on the touch action and 
 - Gallery access blocks and competitor inventory limitations are in references.md/features.md. No blocked page is treated as a design observation.
 - No original-site Lighthouse baseline was collected; no numerical performance-regression claim is made against it.
 - No cloud save, account, database, new route, paid service or analytics was added; saves remain in the same browser and schema.
+
+## Post-report continuation
+
+Four additional six-member-party touch layouts (390×844, 844×390, 667×375, 320×568) pass with zero overlaps, WCAG A/AA violations and browser errors. Tests dispatch actual emulated touch events, verify hold/release, guide focus wrapping, last-party-member access and keyboard scrolling without player movement. Typecheck, build and all 76 unit tests pass again. See followup-review.md and followup-after.json. Firefox/WebKit executables are unavailable locally; coverage remains Chrome emulation.
+
+Latest saved-world Lighthouse after the follow-up fix: mobile 97 performance, desktop 100; accessibility and best practices 100 on both. First-visit title scores remain the prior Phase 6 measurements because title behavior was unchanged.

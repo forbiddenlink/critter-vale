@@ -132,6 +132,9 @@ const MAX_TEAM = 6;
 
 const hud = document.createElement("div");
 hud.className = "hud";
+hud.addEventListener("keydown", (event: KeyboardEvent): void => {
+  if (event.key.startsWith("Arrow")) event.stopPropagation();
+});
 document.body.appendChild(hud);
 
 const mute = document.createElement("button");
@@ -153,7 +156,7 @@ function drawHud() {
   hud.innerHTML = `<div class="hud-heading"><strong>Critter Vale<span aria-hidden="true">✳</span></strong><span class="hud-location">SPROUT HOLLOW</span></div>
     <div class="hud-resources"><span>${sprigs} <small>Sprigs</small></span><span>${caughtIds.size} <small>caught</small></span><span>${crests.size}/3 <small>crests</small></span></div>
     <div class="hud-party-title">YOUR TEAM <span>${team.length} / ${MAX_TEAM}</span></div>
-    <div class="hud-party">${team.map((m) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div></div><small>${m.hp}/${m.maxHp}</small></div>`).join("")}</div>
+    <div class="hud-party" role="region" aria-label="Your party" tabindex="0">${team.map((m) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div></div><small>${m.hp}/${m.maxHp}</small></div>`).join("")}</div>
     <div class="hud-objective"><span class="eyebrow">NEXT IN YOUR JOURNAL</span><p>${objective}</p></div>
     <details class="hud-notes"><summary>Trail notes &amp; controls</summary><p>Caught: ${caught.length ? caught.join(", ") : "none yet"}</p><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small><p>Ember ${crests.has("Ember") ? "✓" : "—"} · Aqua ${crests.has("Aqua") ? "✓" : "—"} · Leaf ${crests.has("Leaf") ? "✓" : "—"}</p></details>`;
 }

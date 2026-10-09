@@ -1287,3 +1287,16 @@ body:has(.battle, .title, .faint, .victory) > .hud { visibility: hidden; }
 [hidden] { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) { .flash { display: none; } }
+/* Reserve room for touch tools and nearby actions, including short landscape screens. */
+@media (orientation: portrait) and (max-width: 760px), (orientation: portrait) and (pointer: coarse) {
+  .hud { max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; }
+  .prompt { bottom: 244px; }
+}
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse), (orientation: landscape) and (max-height: 500px) and (max-width: 760px) {
+  .hud { top: 16px; left: 16px; width: 260px; max-width: calc(100% - 240px); max-height: calc(100dvh - 148px); overflow-y: auto; overscroll-behavior: contain; }
+  .hud-heading { display: block; }
+  .hud-heading strong { font-size: 23px; }
+  .hud-location { margin-top: 4px; }
+  .game-tools { top: 16px; right: 16px; bottom: auto; display: grid; grid-template-columns: repeat(2, auto); gap: 6px; }
+  .prompt, .prompt.show { left: auto; right: 16px; bottom: 110px; max-width: calc(100% - 310px); transform: none; }
+}

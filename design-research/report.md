@@ -57,7 +57,7 @@ Build and typecheck pass. All 76 tests pass. Sixty desktop/phone Chrome state sc
 
 No standalone lint configuration exists; TypeScript's configured unused/fallthrough checks pass. The production build retains a Three.js bundle-size advisory; it does not fail the build. See [verification](verification.md), [journey results](journeys.json) and [browser results](browser-verification.json).
 
-Lighthouse production preview reports: first-visit title 95 mobile / 100 desktop performance; saved-world 99 mobile / 100 desktop performance; accessibility and best practices 100 for both entries/devices. Title SEO 92 because the local preview returns HTML for robots.txt. Reports: [title mobile](lighthouse-mobile.html), [title desktop](lighthouse-desktop.html), [world mobile](lighthouse-overworld-mobile.html), [world desktop](lighthouse-overworld-desktop.html). No original-site Lighthouse baseline was taken; the 79→95 title performance comparison is between upgrade iterations, not a claim against the original game.
+Lighthouse production preview reports: first-visit title 95 mobile / 100 desktop performance; saved-world 97 mobile / 100 desktop performance; accessibility and best practices 100 for both entries/devices. Title SEO 92 because the local preview returns HTML for robots.txt. Reports: [title mobile](lighthouse-mobile.html), [title desktop](lighthouse-desktop.html), [world mobile](lighthouse-overworld-mobile.html), [world desktop](lighthouse-overworld-desktop.html). No original-site Lighthouse baseline was taken; the 79→95 title performance comparison is between upgrade iterations, not a claim against the original game.
 
 ## Blocked and untested
 
@@ -86,3 +86,7 @@ Lighthouse production preview reports: first-visit title 95 mobile / 100 desktop
 5. `966d263` — all templates, touch/guide/collection/battle/lab features and state evidence.
 6. `1d09aee` — final audit reports, real journeys, edge sizes and semantic corrections.
 7. Final report commit completes the branch. No merge.
+
+## Post-report continuation
+
+A further full-party touch review found and fixed landscape HUD/control collisions, portrait contextual-prompt overlap, and keyboard access to the scrollable party list. Four real Chrome touch layouts now pass overlap, movement-release, keyboard scroll, focus-wrap and WCAG A/AA checks. See [follow-up review and before/after evidence](followup-review.md) and [results](followup-after.json). Physical devices and unavailable Firefox/WebKit engines remain untested.
