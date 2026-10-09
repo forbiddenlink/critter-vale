@@ -21,6 +21,9 @@ importers:
       nanoid:
         specifier: '>=3.3.18 <4.0.0'
         version: 3.3.19
+      spectorjs:
+        specifier: 0.9.30
+        version: 0.9.30
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -32,6 +35,13 @@ importers:
         version: 5.0.3(vite@8.3.2)
 
 packages:
+
+  spectorjs@0.9.30:
+    resolution: {integrity: sha512-I9/VI3gfO3UiBCUXj20lQjP3fbezP2y03Virnv3jcMpIiF+/NOyWDrBQ+U8vf29IXHPscxOXzzmZDCkETznsMg==}
+
+  '@shaderfrog/glsl-parser@2.1.5':
+    resolution: {integrity: sha512-fw7U8Y7BBV9NZVLs7lyM8lpQ9YUK7XBNJjN4HhkY3nqkKpSiIQ62PVtPYtW7uZME5072QXQNQBhHJzG3t+NH0w==}
+    engines: {node: '>=16'}
 
   '@dimforge/rapier3d-compat@0.12.0':
     resolution: {integrity: sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow==}
@@ -564,6 +574,12 @@ packages:
     hasBin: true
 
 snapshots:
+
+  spectorjs@0.9.30:
+    dependencies:
+      '@shaderfrog/glsl-parser': 2.1.5
+
+  '@shaderfrog/glsl-parser@2.1.5': {}
 
   '@dimforge/rapier3d-compat@0.12.0': {}
 
