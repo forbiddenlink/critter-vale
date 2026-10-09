@@ -26,7 +26,7 @@ import { sfx, startMusic, toggleMusic } from "./audio";
 import { loadSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 
-const app = document.querySelector<HTMLDivElement>("#app")!;
+const app = document.querySelector<HTMLElement>("#app")!;
 installOverlayAccessibility();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -586,7 +586,7 @@ window.addEventListener("keydown", (event: KeyboardEvent): void => {
 const touchControls = document.createElement("nav");
 touchControls.className = "touch-controls";
 touchControls.setAttribute("aria-label", "Movement controls");
-touchControls.innerHTML = `<div class="dpad">${[["w", "↑", "Move north"], ["a", "←", "Move west"], ["s", "↓", "Move south"], ["d", "→", "Move east"]].map(([key, symbol, label]) => `<button data-key="${key}" aria-label="${label}">${symbol}</button>`).join("")}</div><button class="touch-interact" aria-label="Interact with nearby person or building">E<span>Interact</span></button>`;
+touchControls.innerHTML = `<div class="dpad">${[["w", "↑", "Move north"], ["a", "←", "Move west"], ["s", "↓", "Move south"], ["d", "→", "Move east"]].map(([key, symbol, label]) => `<button data-key="${key}" aria-label="${label}">${symbol}</button>`).join("")}</div><button class="touch-interact" aria-label="E Interact with nearby person or building">E<span>Interact</span></button>`;
 touchControls.querySelectorAll<HTMLButtonElement>("[data-key]").forEach((button: HTMLButtonElement): void => {
   const key = button.dataset.key!;
   button.addEventListener("pointerdown", (event: PointerEvent): void => {

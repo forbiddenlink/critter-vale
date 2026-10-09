@@ -5,3 +5,5 @@
 - Real summon/fusion generation during verification: existing generation can incur cost; use isolated mocked responses instead. Fusion also consumes parents and Sprigs; never execute against a real player save.
 - New paid assets, font subscriptions, services, API keys, analytics, or third-party trackers: not added.
 - Deleting/replacing existing files or resetting existing progress: not performed. Existing New Game and fusion behavior are retained with clear warnings.
+
+- Public crawl policy / new robots.txt or sitemap endpoints: Lighthouse on the local preview receives the SPA HTML fallback for robots.txt. Confirm intended indexing policy and production hosting behavior before adding SEO endpoints; no URL or crawl-policy changes made.
