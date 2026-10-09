@@ -90,3 +90,7 @@ Lighthouse production preview reports: first-visit title 95 mobile / 100 desktop
 ## Post-report continuation
 
 A further full-party touch review found and fixed landscape HUD/control collisions, portrait contextual-prompt overlap, and keyboard access to the scrollable party list. Four real Chrome touch layouts now pass overlap, movement-release, keyboard scroll, focus-wrap and WCAG A/AA checks. See [follow-up review and before/after evidence](followup-review.md) and [results](followup-after.json). Physical devices and unavailable Firefox/WebKit engines remain untested.
+
+## Draft PR integration status
+
+The release-review base check found that this branch starts at `3fe9c2b`, while current `origin/main` is `4616d7f`. Main has API spend protection, Sprig charging, save/battle/input fixes, CI and dependency updates that have not been integrated here. The draft must preserve those changes during integration and repeat CI/browser verification before release. Recorded before screenshots use the original branch baseline, and the completed checks validate this upgrade branch rather than an integrated result with current main. See [PR description and acceptance checklist](pr-description.md).
