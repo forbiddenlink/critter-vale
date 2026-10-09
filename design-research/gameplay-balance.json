@@ -1,0 +1,925 @@
+{
+  "method": "Source-backed calculations, not browser playthrough claims. No paid service calls.",
+  "progression": [
+    {
+      "targetLevel": 7,
+      "xpFromFreshStarter": 288,
+      "estimatedWildWinsAtCappedBand": 5,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 8,
+      "xpFromFreshStarter": 680,
+      "estimatedWildWinsAtCappedBand": 10,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 10,
+      "xpFromFreshStarter": 1840,
+      "estimatedWildWinsAtCappedBand": 27,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 12,
+      "xpFromFreshStarter": 3608,
+      "estimatedWildWinsAtCappedBand": 53,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 14,
+      "xpFromFreshStarter": 6112,
+      "estimatedWildWinsAtCappedBand": 89,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 18,
+      "xpFromFreshStarter": 13840,
+      "estimatedWildWinsAtCappedBand": 201,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    },
+    {
+      "targetLevel": 20,
+      "xpFromFreshStarter": 19320,
+      "estimatedWildWinsAtCappedBand": 281,
+      "assumptions": "Neutral XP quirk, active critter earns all XP, uniform Lv8-11 wilds. Optimistic for early levels; excludes trainer XP and captures."
+    }
+  ],
+  "wildTopAtParty20": [
+    8,
+    11
+  ],
+  "moveChoices": [
+    {
+      "species": "emberpup",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Ember Nip",
+          "element": "Ember",
+          "power": 30,
+          "damage": 33
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 27
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "emberpup",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Ember Nip",
+          "element": "Ember",
+          "power": 30,
+          "damage": 12
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 19
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "emberpup",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Ember Nip",
+          "element": "Ember",
+          "power": 30,
+          "damage": 53
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 21
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "tadmite",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Bubble Jet",
+          "element": "Aqua",
+          "power": 30,
+          "damage": 50
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 20
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "tadmite",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Bubble Jet",
+          "element": "Aqua",
+          "power": 30,
+          "damage": 18
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 14
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "tadmite",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Bubble Jet",
+          "element": "Aqua",
+          "power": 30,
+          "damage": 10
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 16
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "leaflet",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Leaf Slash",
+          "element": "Leaf",
+          "power": 30,
+          "damage": 13
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 22
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "leaflet",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Leaf Slash",
+          "element": "Leaf",
+          "power": 30,
+          "damage": 40
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 16
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "leaflet",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Leaf Slash",
+          "element": "Leaf",
+          "power": 30,
+          "damage": 22
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 18
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "emberwulf",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Flare Fang",
+          "element": "Ember",
+          "power": 38,
+          "damage": 65
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 48
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "emberwulf",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Flare Fang",
+          "element": "Ember",
+          "power": 38,
+          "damage": 23
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 34
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "emberwulf",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Flare Fang",
+          "element": "Ember",
+          "power": 38,
+          "damage": 103
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 38
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "torretoad",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Torrent",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 102
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 37
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "torretoad",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Torrent",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 36
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 27
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "torretoad",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Torrent",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 20
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 30
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "thornmaw",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Vine Lash",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 27
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 40
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "thornmaw",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Vine Lash",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 78
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 29
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "thornmaw",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Vine Lash",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 43
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 32
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "mothbit",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Spore Puff",
+          "element": "Leaf",
+          "power": 26,
+          "damage": 9
+        },
+        {
+          "move": "Flutter",
+          "element": "Normal",
+          "power": 20,
+          "damage": 15
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "mothbit",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Spore Puff",
+          "element": "Leaf",
+          "power": 26,
+          "damage": 28
+        },
+        {
+          "move": "Flutter",
+          "element": "Normal",
+          "power": 20,
+          "damage": 11
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "mothbit",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Spore Puff",
+          "element": "Leaf",
+          "power": 26,
+          "damage": 15
+        },
+        {
+          "move": "Flutter",
+          "element": "Normal",
+          "power": 20,
+          "damage": 12
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "cindershrew",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Cinder Dash",
+          "element": "Ember",
+          "power": 28,
+          "damage": 28
+        },
+        {
+          "move": "Scratch",
+          "element": "Normal",
+          "power": 22,
+          "damage": 22
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "cindershrew",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Cinder Dash",
+          "element": "Ember",
+          "power": 28,
+          "damage": 10
+        },
+        {
+          "move": "Scratch",
+          "element": "Normal",
+          "power": 22,
+          "damage": 16
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "cindershrew",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Cinder Dash",
+          "element": "Ember",
+          "power": 28,
+          "damage": 45
+        },
+        {
+          "move": "Scratch",
+          "element": "Normal",
+          "power": 22,
+          "damage": 18
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "brinefin",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Aqua Splash",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 52
+        },
+        {
+          "move": "Pounce",
+          "element": "Normal",
+          "power": 22,
+          "damage": 20
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "brinefin",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Aqua Splash",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 19
+        },
+        {
+          "move": "Pounce",
+          "element": "Normal",
+          "power": 22,
+          "damage": 15
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "brinefin",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Aqua Splash",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 10
+        },
+        {
+          "move": "Pounce",
+          "element": "Normal",
+          "power": 22,
+          "damage": 16
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "scorchick",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Scorch Peck",
+          "element": "Ember",
+          "power": 29,
+          "damage": 33
+        },
+        {
+          "move": "Peck",
+          "element": "Normal",
+          "power": 24,
+          "damage": 28
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "scorchick",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Scorch Peck",
+          "element": "Ember",
+          "power": 29,
+          "damage": 12
+        },
+        {
+          "move": "Peck",
+          "element": "Normal",
+          "power": 24,
+          "damage": 20
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "scorchick",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Scorch Peck",
+          "element": "Ember",
+          "power": 29,
+          "damage": 53
+        },
+        {
+          "move": "Peck",
+          "element": "Normal",
+          "power": 24,
+          "damage": 22
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "pyrewing",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Flame Gale",
+          "element": "Ember",
+          "power": 38,
+          "damage": 68
+        },
+        {
+          "move": "Wing Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 51
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "pyrewing",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Flame Gale",
+          "element": "Ember",
+          "power": 38,
+          "damage": 24
+        },
+        {
+          "move": "Wing Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 36
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "pyrewing",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Flame Gale",
+          "element": "Ember",
+          "power": 38,
+          "damage": 109
+        },
+        {
+          "move": "Wing Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 40
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "ripplet",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Ripple Jet",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 47
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 20
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "ripplet",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Ripple Jet",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 17
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 14
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "ripplet",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Ripple Jet",
+          "element": "Aqua",
+          "power": 28,
+          "damage": 9
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 16
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "coralux",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Reef Cannon",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 102
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 37
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "coralux",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Reef Cannon",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 36
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 27
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "coralux",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Reef Cannon",
+          "element": "Aqua",
+          "power": 38,
+          "damage": 20
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 30
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "sproutle",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Leaf Dart",
+          "element": "Leaf",
+          "power": 29,
+          "damage": 14
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 24
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "sproutle",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Leaf Dart",
+          "element": "Leaf",
+          "power": 29,
+          "damage": 43
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 18
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "sproutle",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Leaf Dart",
+          "element": "Leaf",
+          "power": 29,
+          "damage": 23
+        },
+        {
+          "move": "Tackle",
+          "element": "Normal",
+          "power": 24,
+          "damage": 19
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "bramblor",
+      "targetElement": "Ember",
+      "damage": [
+        {
+          "move": "Bramble Whip",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 29
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 43
+        }
+      ],
+      "bestMove": 1
+    },
+    {
+      "species": "bramblor",
+      "targetElement": "Aqua",
+      "damage": [
+        {
+          "move": "Bramble Whip",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 83
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 31
+        }
+      ],
+      "bestMove": 0
+    },
+    {
+      "species": "bramblor",
+      "targetElement": "Leaf",
+      "damage": [
+        {
+          "move": "Bramble Whip",
+          "element": "Leaf",
+          "power": 38,
+          "damage": 46
+        },
+        {
+          "move": "Body Slam",
+          "element": "Normal",
+          "power": 28,
+          "damage": 34
+        }
+      ],
+      "bestMove": 0
+    }
+  ],
+  "generated": {
+    "summonHasEvolution": false,
+    "summonMoveKinds": [
+      "Leaf",
+      "Normal"
+    ],
+    "fusionMoveKinds": [
+      "Ember",
+      "Normal"
+    ],
+    "fusionElement": "Ember"
+  },
+  "content": {
+    "builtInSpecies": 15,
+    "wildSpecies": 8,
+    "moveSlotsPerSpecies": 2
+  }
+}
