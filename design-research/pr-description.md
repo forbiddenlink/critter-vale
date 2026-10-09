@@ -32,7 +32,7 @@ Existing local Spector/debugger, root dependency edits and untracked user files 
 - [x] Four additional full-party touch layouts: no collisions, WCAG A/AA violations or browser errors; touch release, keyboard scrolling and focus wrapping pass.
 - [x] Integrated Lighthouse performance: title 94 mobile/100 desktop; saved world 97 mobile/100 desktop. Accessibility and best practices 100 throughout.
 - [x] Integrate current main and preserve upstream safeguards; repeat checks, browser journeys and six wallet/save regression groups with isolated mocks.
-- [ ] Confirm GitHub CI completes successfully for the integrated commit.
+- [x] Integrated commit 1a2c2ed passes GitHub CI verify, Socket checks and the Vercel preview build.
 - [ ] Play-test on physical iOS/Android and check Safari/Firefox; locally unavailable engines were not tested.
 - [ ] Approve and run a live summon/fusion smoke test using isolated game data. Existing generation uses paid credits; all completed tests used mocks.
 - [ ] Review production crawl policy before adding robots/sitemap endpoints. Local-preview SEO is 92 due to the HTML fallback for robots.txt.
