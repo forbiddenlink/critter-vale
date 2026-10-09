@@ -1,6 +1,6 @@
 # Category and feature research
 
-Observed October 9, 2026. Feature inventory below is exhaustive for the loaded key pages, not a claim to know every feature hidden in each commercial game. Public marketing claims are marked as such. Real Chrome captures: `screenshots/references/`; text, URLs and links: `live-sites.json` and `pokemon-site.json`.
+Observed October 9, 2026. Feature inventory below is exhaustive for the loaded key pages, not a claim to know every feature hidden in each commercial game. Public marketing claims are marked as such. Real Chrome captures: `screenshots/references/`; text, URLs and links: `live-sites.json` and `more-peers.json`.
 
 | Peer / loaded page | Visible website tools | Gameplay features explicitly described on loaded page | Relevant gaps |
 |---|---|---|---|
@@ -11,10 +11,11 @@ Observed October 9, 2026. Feature inventory below is exhaustive for the loaded k
 | [PokeMMO](https://pokemmo.com/en/) | Register/login/account recovery, downloads per platform, language choice, forum, support/knowledgebase, news, screenshots/gallery | Marketing: multiplayer and five regions | Visible help and device support; accounts/regions need approval |
 | [Pokémon Showdown](https://play.pokemonshowdown.com/) | Choose name, format/team selection, Battle, Teambuilder, Ladder, Tournaments, spectate, user/friends, rooms/help, Pokédex, replays, rules/news | Live client exposes competitive browser battle entry and team tools; no battles joined during research | Immediate play, strong commands, searchable collection, strategy explanations |
 | [Temtem](https://crema.gg/games/temtem/) | About, features, screenshots/videos, platform links, news/patches, presskit/social | Marketing: collection/catch/battle/trade, six islands, eight Dojos, story campaign, online world, co-op, competitive play, character customization, housing | Explicit goal progression and controls; online/housing out of scope |
-| [Pokémon Pokédex](https://www.pokemon.com/us/pokedex) | Name/number search, advanced type/weakness/ability/size/range filters, sort, creature cards, pagination, no-results/reset | This is a collection reference, not a played game | Search, element filter, meaningful empty state, stats |
+| [Nexomon: Extinction — official Steam listing](https://store.steampowered.com/app/1196630/Nexomon_Extinction/) | Trailer/gallery, language support, system requirements, community, achievements, cloud-save/controller badges, wishlist/store tools | Marketing: 381 creatures, nine elements, evolutions, trainer/tyrant battles, diverse regions, side quests, dynamic difficulty | Starter clarity, evolution facts and progression cues; new regions/systems out of scope |
+| [Moonstone Island](https://www.moonstoneisland.com/) | Launch trailer, image gallery, Steam link, newsletter, Twitter/TikTok | No full textual gameplay inventory exposed on loaded homepage; do not infer from screenshots | Immediate identity, gallery and clear primary action |
 
 ## Other attempts
-PokéRogue loaded a canvas but produced no readable page text in the automated capture; screenshot is recorded. Treat feature inventory as unverified; no inferred features. Nexomon official attempted domain failed DNS; blocked and excluded. No competitors' accounts created, purchases made, or multiplayer sessions joined.
+Official Pokémon Pokédex is blocked by an Imperva human-verification challenge; no live design/feature conclusions drawn from that screenshot. PokéRogue loaded a canvas but produced no readable page text in the automated capture; screenshot is recorded. Treat feature inventory as unverified; no inferred features. Nexomon official attempted domain failed DNS; blocked and excluded. No competitors' accounts created, purchases made, or multiplayer sessions joined.
 
 ## Fit and priority
 High: touch movement, guide/controls, next objective, readable party and battle health, collection search/filter and no-results recovery, accessible overlays, labeled generation form. These support the existing main action and data.

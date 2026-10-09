@@ -4,6 +4,10 @@ const FOCUSABLE = 'button:not(:disabled):not([hidden]), input, textarea, select,
 
 export function installOverlayAccessibility(): void {
   let current: HTMLElement | null = null;
+  let lastOutsideFocus: HTMLElement | null = null;
+  window.addEventListener('focusin', (event: FocusEvent): void => {
+    if (event.target instanceof HTMLElement && event.target !== document.body && !event.target.closest(MODALS)) lastOutsideFocus = event.target;
+  });
   const previousFocus = new WeakMap<HTMLElement, HTMLElement>();
   const refresh = (): void => {
     const overlays = [...document.querySelectorAll<HTMLElement>(MODALS)];
@@ -19,13 +23,16 @@ export function installOverlayAccessibility(): void {
       if (top) {
         if (document.activeElement instanceof HTMLElement && document.activeElement !== document.body && !old?.contains(document.activeElement)) {
           previousFocus.set(top, document.activeElement);
+        } else if (lastOutsideFocus?.isConnected) {
+          previousFocus.set(top, lastOutsideFocus);
         }
         top.setAttribute('role', 'dialog');
         top.setAttribute('aria-modal', 'true');
         top.tabIndex = -1;
       } else if (old) {
         const prior = previousFocus.get(old);
-        if (prior?.isConnected) prior.focus();
+        // Let Chromium update the inert subtree before restoring keyboard focus.
+        if (prior?.isConnected) setTimeout(() => { if (!current && prior.isConnected) { prior.getBoundingClientRect(); prior.focus({ preventScroll: true }); } }, 100);
       }
     }
     if (!top) return;

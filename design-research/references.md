@@ -4,7 +4,7 @@ Observed October 9, 2026 in real Chrome. Every usable reference below was loaded
 
 | Reference / live site | Gallery provenance | What informs Critter Vale | Capture |
 |---|---|---|---|
-| [Bruno Simon](https://bruno-simon.com/) | [Awwwards SOTD, November 11 2019](https://www.awwwards.com/sites/bruno-simon-portfolio); loaded award page confirms | Playable world as destination; minimal interface over exploration. Outside industry: developer portfolio. | bruno.png |
+| [Bruno Simon](https://bruno-simon.com/) | [Awwwards SOTD, November 11 2019](https://www.awwwards.com/sites/bruno-simon-portfolio); loaded award page confirms | Playable world as destination; minimal interface over exploration. Outside industry: developer portfolio. | bruno-loaded.png |
 | [Kepler Interactive](https://www.kepler-interactive.com/) | [Siteinspire](https://www.siteinspire.com/website/11541-kepler-interactive) | Distinct identity and disciplined framing of highly varied game art | kepler.png |
 | [Annapurna](https://annapurna.com/) | [Siteinspire](https://www.siteinspire.com/website/11459-annapurna) | Browseable catalogue, filters, art-first hierarchy | annapurna.png |
 | [Le Puzz](https://lepuzz.com/) | [Siteinspire](https://www.siteinspire.com/website/10463-le-puzz) | Expressive serif, warm paper and playful product/creature presentation; observed email popup is a distraction, not adopted | lepuzz.png |

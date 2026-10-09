@@ -8,7 +8,7 @@ const fs = require('fs');
   const context=await browser.newContext({viewport:{width,height}, reducedMotion:'reduce'});
   const page=await context.newPage();
   page.on('pageerror',e=>log.push({device,error:e.message}));
-  await page.route('**/src/main.ts',async route=>{
+  await page.route('**/src/main.ts*',async route=>{
    const r=await route.fetch();
    await route.fulfill({response:r,body:(await r.text())+'\nwindow.__review={world,team,openShop,showInterior,showFaintScreen,showVictory,drawHud,makeCritter,openSummonLab,openFusionLab,onSummoned,onFused,seen,caughtIds};'});
   });
