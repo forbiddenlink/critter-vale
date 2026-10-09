@@ -10,3 +10,9 @@
 
 - Branch deletion: remote fix/summon-cost-abuse is associated with merged PR #14, but its original commit is not an ancestor because the change was squash-merged. Confirm deletion separately; it was retained. Local feat/spectorjs-debugger and its uncommitted debugger work are retained. main and active design/upgrade are retained. Renovate's open pnpm branch/PR #20 and dependency dashboard #6 are active automation work, not stale cleanup targets.
 - Deleting verification/backup directories: /Volumes/LizsDisk/_wt/critter-vale-upgrade-integration (clean detached integration checkout), /Volumes/LizsDisk/_wt/critter-vale-node-modules-before-integration (preserved incompatible dependency install), and /Volumes/LizsDisk/_wt/critter-vale-local-work-backup.patch (original tracked debugger edits). Retained under the original no-file-deletion rule; the active checkout is synchronized and has a fresh working install.
+
+
+- Gameplay rebalance: replacing the XP curve, wild-level cap, trial restrictions or enemy-party levels changes the difficulty of existing saves. The ordinary-progression audit supports a deliberate pacing pass, but no numerical rebalance was applied here.
+- Battle-system redesign: expanding move sets, status/speed/turn-order rules, enemy AI and generated-species mechanics changes core combat/save contracts. Define and validate these changes before implementation.
+- Reserve storage or releasing/replacing partners when the six-member party is full: reserve storage requires save-schema work; releasing/removing partners is destructive. Existing party membership remains intact.
+- New quests, regions, rematches or post-Champion reward economy: require game-design decisions and potentially saved progression changes. Existing one-time challenges/content were retained.

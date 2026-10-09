@@ -14,7 +14,7 @@ const base=process.env.REVIEW_URL||'http://127.0.0.1:5184';
  await p.route('**/src/main.ts*',async route=>{const r=await route.fetch();await route.fulfill({response:r,body:await r.text()+'\nwindow.__audit={state:()=>({pos:world.getPos(),team:team.map(m=>({id:m.species.id,element:m.species.element,level:m.level,hp:m.hp,maxHp:m.maxHp,xp:m.xp,quirk:m.quirk})),save:JSON.parse(localStorage.getItem("critter-vale-save-v1"))})};'});});
  const battleRead=()=>p.evaluate(()=>{const hp=side=>({hp:Number(document.querySelector('.'+side+' .hpbar').getAttribute('aria-valuenow')),maxHp:Number(document.querySelector('.'+side+' .hpbar').getAttribute('aria-valuemax')),id:document.querySelector('.'+side+' .mon').getAttribute('src').split('/').pop().replace('.png',''),element:document.querySelector('.'+side+' .nameplate').textContent.match(/Ember|Aqua|Leaf/)[0]});const title=document.querySelector('.battle-heading h2').textContent;return {active:hp('ally'),foe:hp('foe'),trainer:title.startsWith('Trial')?title:null};});
  if(resume)await context.addInitScript(save=>localStorage.setItem('critter-vale-save-v1',JSON.stringify(save)),resume);
- await p.goto(base);await p.waitForLoadState('networkidle');await p.screenshot({path:'design-research/screenshots/gameplay/01-title.png'});if(await p.locator('.starter').count()){await p.locator('.starter[data-id="emberpup"]').click();await record('starter');}else await record('resume-natural-save');
+ await p.goto(base);await p.waitForLoadState('networkidle');await p.screenshot({path:previous?`design-research/screenshots/gameplay/resume-${events.length}.png`:'design-research/screenshots/gameplay/01-title.png'});if(await p.locator('.starter').count()){await p.locator('.starter[data-id="emberpup"]').click();await record('starter');}else await record('resume-natural-save');
  const release=async()=>{for(const k of ['w','a','s','d'])await p.keyboard.up(k);};
  const has=sel=>p.locator(sel).count();
  async function walk(x,z){
@@ -36,20 +36,21 @@ const base=process.env.REVIEW_URL||'http://127.0.0.1:5184';
   if(await has('.battle')){
    if(!currentBattle){currentBattle=true;battleCount++;shots=0;await record('battle-start',{battle:await battleRead()});if(battleCount<=3||(await battleRead()).trainer)await p.screenshot({path:`design-research/screenshots/gameplay/battle-${battleCount}.png`});}
    if(await has('.switch-menu')){
-    const choices=p.locator('.switch-menu button[data-i]:not(.sw-cancel)');if(await choices.count()){await choices.first().click();await p.waitForTimeout(100);continue;}
+    const choices=p.locator('.switch-menu button[data-i]:not(.sw-cancel)');if(await choices.count()){const st=await p.evaluate(()=>__audit.state());const foe=(await battleRead()).foe;const beats={Ember:'Leaf',Leaf:'Aqua',Aqua:'Ember'};const counter=st.team.findIndex(m=>m.hp>0&&beats[m.element]===foe.element);const preferred=p.locator(`.switch-menu [data-i="${counter}"]`);await (counter>=0&&await preferred.count()?preferred:choices.first()).click();await p.waitForTimeout(100);continue;}
    }
    const moves=p.locator('.move');if(!await moves.first().isEnabled({timeout:250}).catch(()=>false)){await p.waitForTimeout(150);continue;}
    const b=await battleRead();const st=await p.evaluate(()=>__audit.state());
    const wantsCatch=!b.trainer&&st.team.length<4&&!st.team.some(m=>m.element===b.foe.element);
    const beats={Ember:'Leaf',Leaf:'Aqua',Aqua:'Ember'};
-   if(beats[b.foe.element]===b.active.element){
+   if(beats[b.active.element]!==b.foe.element){
     const counter=st.team.findIndex(m=>m.hp>m.maxHp*.35&&beats[m.element]===b.foe.element);
     if(counter>=0&&await p.locator('#switch').isVisible()&&await p.locator('#switch').isEnabled()){await p.locator('#switch').click();await p.locator(`.switch-menu [data-i="${counter}"]`).click();turns++;continue;}
     if(!b.trainer&&counter<0){await p.locator('#run').click();await p.waitForTimeout(250);continue;}
    }
    const balls=(st.save?.bag?.['vale-ball']||0);
    if(wantsCatch&&balls>0&&b.foe.hp/b.foe.maxHp<=.42&&shots<5){await p.locator('#bag').click();await p.locator('[data-id="vale-ball"]').click();shots++;catches++;}
-   else if(b.active.hp/b.active.maxHp<.25&&b.trainer&&await p.locator('#bag').isVisible()&&(st.save?.bag?.['dew-potion']||0)>0){await p.locator('#bag').click();await p.locator('[data-id="dew-potion"]').click();}
+   else if(b.active.hp/b.active.maxHp<.5&&b.trainer&&await p.locator('#bag').isVisible()&&(st.save?.bag?.['dew-potion']||0)>0){await p.locator('#bag').click();await p.locator('[data-id="dew-potion"]').click();}
+   else if(b.trainer&&st.team.some(m=>m.hp===0)&&await p.locator('#bag').isVisible()&&(st.save?.bag?.revive||0)>0){await p.locator('#bag').click();await p.locator('[data-id="revive"]').click();await p.locator('.switch-menu button[data-i]:not(.sw-cancel)').first().click();}
    else {const own=await moves.first().innerText();await moves.nth(own.includes('Resisted')?1:0).click();}
    turns++;await p.waitForTimeout(160);continue;
   }
@@ -64,6 +65,7 @@ const base=process.env.REVIEW_URL||'http://127.0.0.1:5184';
   else if(!state.save.crests.includes('Leaf'))goal='Fern';
   else if(!state.save.crests.includes('Ember'))goal='Pyra';
   else if(!state.save.crests.includes('Aqua'))goal='Marlow';else goal='Sol';
+  if(goal==='Sol'&&((state.save.bag?.['dew-potion']||0)<3||(state.save.bag?.revive||0)<2)&&state.save.sprigs>=60){if(await walk(-6,14.75)){await p.keyboard.press('e');for(const [id,count] of [['dew-potion',3],['revive',2]]){const n=state.save.bag?.[id]||0;for(let i=n;i<count;i++){const buy=p.locator(`.shop-buy[data-id="${id}"]`);if(await buy.count()&&await buy.isEnabled())await buy.click();}}await p.keyboard.press('Escape');await record('restocked-champion-medicine');}continue;}
   if((state.save?.bag?.['vale-ball']||0)<2&&state.team.length<3&&(state.save?.sprigs||0)>=80){
    if(await walk(-6,14.75)){await p.keyboard.press('e');if(await p.locator('.shop-buy[data-id="vale-ball"]').count()){for(let n=0;n<3;n++){const buy=p.locator('.shop-buy[data-id="vale-ball"]');if(await buy.isEnabled())await buy.click();}await p.keyboard.press('Escape');await record('restocked-balls');}}continue;
   }
