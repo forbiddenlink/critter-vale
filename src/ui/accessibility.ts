@@ -8,6 +8,12 @@ export function installOverlayAccessibility(): void {
   window.addEventListener('focusin', (event: FocusEvent): void => {
     if (event.target instanceof HTMLElement && event.target !== document.body && !event.target.closest(MODALS)) lastOutsideFocus = event.target;
   });
+  // Safari does not focus a button on click, so focusin never fires for it. Track the pressed control too,
+  // otherwise closing an overlay opened by pointer has nowhere to return focus.
+  window.addEventListener('pointerdown', (event: PointerEvent): void => {
+    const control = event.target instanceof Element ? event.target.closest<HTMLElement>('button, a[href], [tabindex="0"]') : null;
+    if (control && !control.closest(MODALS)) lastOutsideFocus = control;
+  }, true);
   const previousFocus = new WeakMap<HTMLElement, HTMLElement>();
   const refresh = (): void => {
     const overlays = [...document.querySelectorAll<HTMLElement>(MODALS)];
