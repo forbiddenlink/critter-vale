@@ -1,5 +1,5 @@
 // Fresh-save play audit. Instrumentation reads state; all gameplay writes use browser inputs.
-const {chromium}=require('/Users/elizabethstein/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('./pw.cjs');
 const fs=require('node:fs');
 const base=process.env.REVIEW_URL||'http://127.0.0.1:5184';
 (async()=>{

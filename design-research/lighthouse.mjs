@@ -2,7 +2,7 @@ import lighthouse from './tooling/node_modules/lighthouse/core/index.js';
 import {launch} from './tooling/node_modules/chrome-launcher/dist/index.js';
 import fs from 'node:fs';
 import desktopConfig from './tooling/node_modules/lighthouse/core/config/desktop-config.js';
-const chrome=await launch({chromeFlags:['--headless','--no-sandbox','--disable-dev-shm-usage']});
+const chrome=await launch({chromeFlags:['--headless','--mute-audio','--no-sandbox','--disable-dev-shm-usage']});
 try{
  for(const device of ['mobile','desktop']){
   const {lhr,report}=await lighthouse('http://127.0.0.1:4174/',{port:chrome.port,output:['json','html'],onlyCategories:['performance','accessibility','best-practices','seo']},device==='desktop'?desktopConfig:undefined);

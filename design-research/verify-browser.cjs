@@ -1,4 +1,4 @@
-const {chromium}=require('/Users/elizabethstein/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('./pw.cjs');
 const {AxeBuilder}=require('./tooling/node_modules/@axe-core/playwright');
 const base=process.env.REVIEW_URL||'http://127.0.0.1:5174';
 const fs=require('fs');const assert=require('node:assert/strict');

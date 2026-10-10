@@ -1,4 +1,4 @@
-const {chromium}=require('/Users/elizabethstein/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('./pw.cjs');
 const assert=require('node:assert/strict');const fs=require('node:fs');
 const base=process.env.REVIEW_URL||'http://127.0.0.1:5184';
 (async()=>{const b=await chromium.launch({channel:'chrome',headless:true});const results=[];try{

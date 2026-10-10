@@ -1,4 +1,4 @@
-const {chromium}=require('/Users/elizabethstein/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const {chromium}=require('./pw.cjs');
 const fs=require('fs');
 const sources=[
  ['bruno','https://www.awwwards.com/sites/bruno-simon-portfolio'],
