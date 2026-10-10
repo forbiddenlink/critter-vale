@@ -40,6 +40,11 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
 app.appendChild(renderer.domElement);
 
+// Dev-only WebGL frame debugger: add ?spector to the URL while running `pnpm dev`.
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("spector")) {
+  void import("./dev/spector").then(({ initSpectorDebugger }) => initSpectorDebugger(renderer.domElement));
+}
+
 const world = new Overworld(window.innerWidth / window.innerHeight);
 world.active = false; // frozen until a starter is chosen
 world.inputBlocked = () => !!document.querySelector(".title, .dex, .interior, .summon, .dialog, .faint, .victory, .field-guide, .battle");

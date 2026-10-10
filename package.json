@@ -1,7 +1,7 @@
 {
   "name": "critter-vale",
   "private": true,
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@10.34.6",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/three": "0.186.0",
     "nanoid": "3.3.19",
+    "spectorjs": "0.9.30",
     "typescript": "7.0.2",
     "vite": "8.3.2",
     "vitest": "5.0.3"
