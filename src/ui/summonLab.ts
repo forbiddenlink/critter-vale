@@ -23,6 +23,8 @@ export function openSummonLab(
   if (document.querySelector(".summon")) return;
   let element: Element = "Ember";
   let cancelled = false;
+  let draftName = "";
+  let draftDescription = "";
 
   const root = document.createElement("div");
   root.className = "summon";
@@ -41,18 +43,21 @@ export function openSummonLab(
   const renderForm = () => {
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-head"><h2>✨ Summon Lab</h2><span class="shop-sprigs">🌱 ${wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
+        <div class="summon-head"><h2>Summon Lab</h2><span class="shop-sprigs">🌱 ${wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
         <p class="summon-sub">Describe a critter and choose its element. The lab will bring it to life and add it to your party.</p>
         <div class="summon-elements">
           ${ELEMENTS.map(
             (el) =>
-              `<button class="summon-el${el === element ? " on" : ""}" data-el="${el}" style="--c:${
+              `<button class="summon-el${el === element ? " on" : ""}" data-el="${el}" aria-pressed="${el === element}" style="--c:${
                 el === "Ember" ? "#ff7a3c" : el === "Aqua" ? "#3ca7ff" : "#4cc95a"
               }">${el}</button>`
           ).join("")}
         </div>
-        <input class="summon-name" maxlength="24" placeholder="Name (optional, e.g. Zappup)">
-        <textarea class="summon-desc" maxlength="200" rows="3" placeholder="Describe it: a spiky ember lizard with a lantern tail..."></textarea>
+        <label class="summon-field" for="summon-name">Name <span>(optional)</span></label>
+        <input id="summon-name" class="summon-name" maxlength="24" placeholder="Name (optional, e.g. Zappup)">
+        <label class="summon-field" for="summon-desc">Describe your critter</label>
+        <textarea id="summon-desc" class="summon-desc" aria-describedby="summon-validation" maxlength="200" rows="3" placeholder="Describe it: a spiky ember lizard with a lantern tail..."></textarea>
+        <p id="summon-validation" class="summon-validation" role="alert" hidden></p>
         <div class="summon-actions">
           <button class="summon-go"${blocked() ? " disabled" : ""}>Summon 🌱${cost}</button>
         </div>
@@ -64,12 +69,23 @@ export function openSummonLab(
               : "Live AI image generation takes a little while. Sprigs are spent when the summon starts."
         }</p>
       </div>`;
+    const nameField = root.querySelector<HTMLInputElement>(".summon-name")!;
+    const descriptionField = root.querySelector<HTMLTextAreaElement>(".summon-desc")!;
+    nameField.value = draftName;
+    descriptionField.value = draftDescription;
+    nameField.addEventListener("input", (): void => { draftName = nameField.value; });
+    descriptionField.addEventListener("input", (): void => {
+      draftDescription = descriptionField.value;
+      descriptionField.removeAttribute("aria-invalid");
+      (root.querySelector(".summon-validation") as HTMLElement).hidden = true;
+    });
     root.querySelector(".summon-close")!.addEventListener("click", close);
     root.querySelectorAll<HTMLButtonElement>(".summon-el").forEach((b) =>
       b.addEventListener("click", () => {
         element = b.dataset.el as Element;
-        root.querySelectorAll(".summon-el").forEach((x) => x.classList.remove("on"));
+        root.querySelectorAll(".summon-el").forEach((x) => { x.classList.remove("on"); x.setAttribute("aria-pressed", "false"); });
         b.classList.add("on");
+        b.setAttribute("aria-pressed", "true");
       })
     );
     root.querySelector(".summon-go")!.addEventListener("click", onSummon);
@@ -78,13 +94,15 @@ export function openSummonLab(
   const renderLoading = () => {
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-loading">
+        <div class="summon-head"><h2>Summoning</h2><button class="summon-close" aria-label="Cancel and close summoning">✕</button></div>
+        <div class="summon-loading" role="status">
           <div class="summon-orb" style="--c:${
             element === "Ember" ? "#ff7a3c" : element === "Aqua" ? "#3ca7ff" : "#4cc95a"
           }"></div>
           <p class="summon-status">${STATUS_LINES[0]}</p>
         </div>
       </div>`;
+    root.querySelector(".summon-close")!.addEventListener("click", close);
     let i = 0;
     const statusEl = root.querySelector(".summon-status") as HTMLElement;
     const timer = setInterval(() => {
@@ -118,7 +136,7 @@ export function openSummonLab(
           </div>
         </div>
         <div class="summon-actions">
-          <button class="summon-go" data-act="add">Add to party</button>
+          <button class="summon-go" data-act="add">${partyFull() ? "Keep in Critter-Dex" : "Add to party"}</button>
           <button class="summon-discard" data-act="discard">Discard</button>
         </div>
       </div>`;
@@ -135,7 +153,12 @@ export function openSummonLab(
     const name = rawName.replace(/[^\p{L}\p{N} '-]/gu, "").trim().slice(0, 24) || "Wildling";
     const description = (root.querySelector(".summon-desc") as HTMLTextAreaElement).value.trim();
     if (description.length < 3) {
-      renderError("Describe your critter first (at least a few words).");
+      const message = root.querySelector<HTMLElement>(".summon-validation")!;
+      message.textContent = "Describe your critter first (at least a few words).";
+      message.hidden = false;
+      const field = root.querySelector<HTMLTextAreaElement>(".summon-desc")!;
+      field.setAttribute("aria-invalid", "true");
+      field.focus();
       return;
     }
     if (blocked() || !wallet.spend(cost)) {

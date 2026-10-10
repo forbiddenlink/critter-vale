@@ -11,7 +11,7 @@ import {
   checkEvolution,
 } from "../game/battle";
 import { spriteUrl } from "../game/customSpecies";
-import { switchOptions, reviveOptions, faintFoe } from "../game/battleFlow";
+import { switchOptions, reviveOptions, faintFoe, awardBattleXp } from "../game/battleFlow";
 import { ITEMS, consume, bagCount } from "../game/items";
 import type { Bag, ItemId } from "../game/items";
 import { quirkDef } from "../game/traits";
@@ -66,25 +66,26 @@ export function runBattle(
   const root = document.createElement("div");
   root.className = "battle";
   root.innerHTML = `
+    <div class="battle-heading"><span class="eyebrow">FIELD ENCOUNTER</span><h2>${isTrainer ? `Trial · ${opts.trainerName}` : "A wild encounter"}</h2><span>${isTrainer ? "TAMER BATTLE" : "THE VALE / TALL GRASS"}</span></div>
     <div class="arena">
       <div class="foe">
         <div class="nameplate"></div>
-        <div class="hpbar"><span id="foeHp"></span></div>
+        <div class="hpbar" role="meter" aria-label="Opponent HP" aria-valuemin="0"><span id="foeHp"></span></div><div class="hp-number" id="foeHpText"></div>
         <div class="mon-wrap"><img class="mon foe-mon" id="foeMon" src="" alt=""></div>
       </div>
       <div class="ally">
         <div class="mon-wrap"><img class="mon ally-mon" id="allyMon" src="" alt=""></div>
         <div class="nameplate"></div>
-        <div class="hpbar"><span id="allyHp"></span></div>
+        <div class="hpbar" role="meter" aria-label="Your critter HP" aria-valuemin="0"><span id="allyHp"></span></div><div class="hp-number" id="allyHpText"></div>
       </div>
     </div>
-    <div class="log" id="log" role="log" aria-live="polite">${isTrainer ? `${opts.trainerName} wants to battle!` : `A wild ${foe.species.name} appeared!`}</div>
+    <div class="log" id="log" role="status" aria-live="polite">${isTrainer ? `${opts.trainerName} wants to battle!` : `A wild ${foe.species.name} appeared!`}</div>
     <div class="actions">
-      <div class="moves">
+      <div class="moves" role="group" aria-label="Battle moves">
         <button class="move" data-i="0"></button>
         <button class="move" data-i="1"></button>
       </div>
-      <div class="menu">
+      <div class="menu" role="group" aria-label="Battle tools">
         <button id="bag">Bag</button>
         <button id="switch">Switch</button>
         <button id="run"${isTrainer ? " hidden" : ""}>Run</button>
@@ -104,10 +105,27 @@ export function runBattle(
   const drawHp = () => {
     el("#foeHp").style.width = `${Math.max(0, (foe.hp / foe.maxHp) * 100)}%`;
     el("#allyHp").style.width = `${Math.max(0, (active.hp / active.maxHp) * 100)}%`;
+    for (const [id, critter] of [["foe", foe], ["ally", active]] as const) {
+      el(`#${id}HpText`).textContent = `${Math.max(0, critter.hp)} / ${critter.maxHp} HP`;
+      const meter = el(`#${id}Hp`).parentElement!;
+      meter.setAttribute("aria-valuemax", String(critter.maxHp));
+      meter.setAttribute("aria-valuenow", String(Math.max(0, critter.hp)));
+    }
+  };
+
+  const drawMoves = (): void => {
+    const moves = movesFor(active.species.id);
+    root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
+      const m = moves[Number(btn.dataset.i)];
+      const multiplier = elementMultiplier(m.element, foe.species.element);
+      btn.innerHTML = `${m.name}<small>${m.element} · ${multiplier > 1 ? "Strong matchup" : multiplier < 1 ? "Resisted" : "Neutral matchup"}</small>`;
+    });
   };
 
   const renderFoe = () => {
+    drawMoves();
     (el("#foeMon") as HTMLImageElement).src = spriteUrl(foe.species.id);
+    (el("#foeMon") as HTMLImageElement).alt = foe.species.name;
     const fq = quirkDef(foe.quirk);
     el(".foe .nameplate").innerHTML =
       `${foe.species.name} <small>Lv${foe.level}</small> · ${foe.species.element}${fq.emoji ? ` <span title="${fq.name}: ${fq.desc}">${fq.emoji}</span>` : ""}`;
@@ -115,14 +133,11 @@ export function runBattle(
   };
   const renderActive = () => {
     (el("#allyMon") as HTMLImageElement).src = spriteUrl(active.species.id);
+    (el("#allyMon") as HTMLImageElement).alt = active.species.name;
     const aq = quirkDef(active.quirk);
     el(".ally .nameplate").innerHTML =
       `${active.species.name} <small id="allyLv">Lv${active.level}</small> · ${active.species.element}${aq.emoji ? ` <span title="${aq.name}: ${aq.desc}">${aq.emoji}</span>` : ""}`;
-    const moves = movesFor(active.species.id);
-    root.querySelectorAll<HTMLButtonElement>(".move").forEach((btn) => {
-      const m = moves[Number(btn.dataset.i)];
-      btn.innerHTML = `${m.name}<small>${m.element}</small>`;
-    });
+    drawMoves();
     drawHp();
   };
   renderFoe();
@@ -274,11 +289,8 @@ export function runBattle(
     }
   };
 
-  const foeFaint = () => {
-    // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
-    const fainted = foe;
-    const { levels, benchLevels, next } = faintFoe(foes, active, fainted, party);
-    announceXp(`${foeLabel(fainted)} fainted!`, levels);
+  const announceRewards = (via: string, { levels, benchLevels }: ReturnType<typeof awardBattleXp>): void => {
+    announceXp(via, levels);
     for (const { critter, levels: gained } of benchLevels) {
       if (gained > 0) {
         log(`${critter.species.name} grew to Lv${critter.level}!`);
@@ -286,6 +298,14 @@ export function runBattle(
         if (evolvedTo) log(`What? ${critter.species.name} evolved!`);
       }
     }
+    drawHp();
+  };
+
+  const foeFaint = () => {
+    // XP is earned for EVERY foe that faints, not only the last one of a trainer's team.
+    const earned = faintFoe(foes, active, foe, party);
+    announceRewards(`${foeLabel(foe)} fainted!`, earned);
+    const { next } = earned;
     if (isTrainer && next) {
       setTimeout(() => {
         foe = next;
@@ -361,7 +381,7 @@ export function runBattle(
       sfx("catch");
       catchConfetti();
       setTimeout(() => {
-        log(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`);
+        announceRewards(`Gotcha! ${foe.species.name} was caught! (${pct}% shot)`, awardBattleXp(active, foe, party));
         setTimeout(() => finish("caught", foe), 700);
       }, 400);
     } else {
@@ -381,7 +401,7 @@ export function runBattle(
       setBusy(false);
       return;
     }
-    const heal = ITEMS[id].power;
+    const heal = Math.min(ITEMS[id].power, active.maxHp - active.hp);
     active.hp = Math.min(active.maxHp, active.hp + heal);
     drawHp();
     log(`${active.species.name} recovered ${heal} HP!`);

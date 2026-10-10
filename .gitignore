@@ -26,3 +26,9 @@ dist-ssr
 
 # AGENTS.md is a local symlink to CLAUDE.md, not tracked
 /AGENTS.md
+
+# Generated design-research evidence; the PR #21 set lives on branch evidence/critter-vale-21-design-research
+design-research/screenshots/
+design-research/*lighthouse*.html
+design-research/*lighthouse*.json
+design-research/gameplay-run.json

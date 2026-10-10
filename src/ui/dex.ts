@@ -62,41 +62,65 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
         <span class="dex-count">${caught.size} / ${total} caught</span>
         <button class="dex-close" aria-label="Close">✕</button>
       </div>
-      <div class="dex-grid">
-        ${order.map((id) => {
-          const s = SPECIES[id];
-          const isCaught = caught.has(id);
-          const isSeen = seen.has(id);
-          const state = isCaught ? "caught" : isSeen ? "seen" : "unknown";
-          const holo = isCaught ? " holo" : "";
-          const name = isCaught || isSeen ? s.name : "???";
-          const el = isCaught ? s.element : isSeen ? "seen" : "—";
-          const stats = isCaught
-            ? `<div class="dex-stats">HP ${s.baseHp} · ATK ${s.baseAtk} · DEF ${s.baseDef}</div>`
-            : "";
-          return `<div class="dex-cell ${state}${holo}" style="--c:${s.color}">
-            ${
-              isCaught || isSeen
-                ? `<img src="${spriteUrl(id)}" alt="">`
-                : `<div class="dex-q">?</div>`
-            }
-            <div class="dex-name">${name}</div>
-            <div class="dex-el">${el}</div>
-            ${stats}
-          </div>`;
-        }).join("")}
+      <p class="dex-sub">Your field notes on the Vale's wild company. New discoveries begin in the tall grass.</p>
+      <div class="dex-tools">
+        <label>Find a critter<input class="dex-search" type="search" placeholder="Search discovered critters" autocomplete="off"></label>
+        <label>Collection<select class="dex-state"><option value="all">All discoveries</option><option value="caught">Caught</option><option value="seen">Seen, not caught</option><option value="unknown">Undiscovered</option></select></label>
+        <label>Element<select class="dex-element"><option value="all">All elements</option><option>Ember</option><option>Aqua</option><option>Leaf</option></select></label>
       </div>
+      <p class="dex-results" role="status"></p>
+      <div class="dex-grid"></div>
+      <div class="dex-empty" hidden><h3>No field notes found</h3><p>Try another name or clear your filters. Undiscovered critters stay a mystery until you meet them.</p><button class="io-btn dex-reset">Clear filters</button></div>
       <div class="dex-hint">Catch wild critters in the tall grass to fill your Dex.</div>
     </div>`;
   document.body.appendChild(root);
-  attachHolo(root.querySelector(".dex-grid") as HTMLElement);
+  const search = root.querySelector<HTMLInputElement>(".dex-search")!;
+  const stateFilter = root.querySelector<HTMLSelectElement>(".dex-state")!;
+  const elementFilter = root.querySelector<HTMLSelectElement>(".dex-element")!;
+  const grid = root.querySelector<HTMLElement>(".dex-grid")!;
+  const renderGrid = (): void => {
+    const query = search.value.trim().toLowerCase();
+    const filtered = order.filter((id) => {
+      const isCaught = caught.has(id);
+      const isSeen = seen.has(id) || isCaught;
+      const state = isCaught ? "caught" : isSeen ? "seen" : "unknown";
+      return (stateFilter.value === "all" || stateFilter.value === state)
+        && (elementFilter.value === "all" || (isCaught && SPECIES[id].element === elementFilter.value))
+        && (!query || (isSeen && SPECIES[id].name.toLowerCase().includes(query)));
+    });
+    grid.innerHTML = filtered.map((id) => {
+      const species = SPECIES[id];
+      const isCaught = caught.has(id);
+      const isSeen = seen.has(id) || isCaught;
+      const state = isCaught ? "caught" : isSeen ? "seen" : "unknown";
+      const evolution = isCaught && species.evolvesTo ? `<div class="dex-evolution">Evolves at Lv ${species.evolvesAt}</div>` : "";
+      return `<article class="dex-cell ${state}${isCaught ? " holo" : ""}" style="--c:${species.color}">
+        <span class="dex-index">NO. ${String(order.indexOf(id) + 1).padStart(3, "0")} <span>${isCaught ? "Caught" : isSeen ? "Seen" : "Unknown"}</span></span>
+        ${isSeen ? `<img src="${spriteUrl(id)}" alt="" width="110" height="110" loading="lazy">` : `<div class="dex-q" aria-hidden="true">?</div>`}
+        <h3 class="dex-name">${isSeen ? species.name : "Undiscovered"}</h3>
+        <div class="dex-el">${isCaught ? species.element : isSeen ? "Encountered in the Vale" : "A new friend awaits"}</div>
+        ${isCaught ? `<div class="dex-stats">HP ${species.baseHp} · ATK ${species.baseAtk} · DEF ${species.baseDef}</div>` : ""}${evolution}
+      </article>`;
+    }).join("");
+    root.querySelector(".dex-results")!.textContent = `${filtered.length} of ${total} field notes · Element filters show caught critters.`;
+    (root.querySelector(".dex-empty") as HTMLElement).hidden = filtered.length > 0;
+  };
+  search.addEventListener("input", renderGrid);
+  stateFilter.addEventListener("change", renderGrid);
+  elementFilter.addEventListener("change", renderGrid);
+  root.querySelector(".dex-reset")!.addEventListener("click", (): void => {
+    search.value = ""; stateFilter.value = "all"; elementFilter.value = "all"; renderGrid(); search.focus();
+  });
+  attachHolo(grid);
+  renderGrid();
 
   const close = () => {
     root.remove();
     window.removeEventListener("keydown", onKey);
   };
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === "Escape" || e.key.toLowerCase() === "x") close();
+    const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement;
+    if (e.key === "Escape" || (!typing && e.key.toLowerCase() === "x")) close();
   };
   root.querySelector(".dex-close")!.addEventListener("click", close);
   root.addEventListener("click", (e) => {

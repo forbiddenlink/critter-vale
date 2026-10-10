@@ -1,0 +1,10 @@
+[
+  "desktop: cancel generation does not add a creature",
+  "desktop: full-party summon saved in Dex without growing party",
+  "desktop: kept fusion consumes two fixture parents, creates hybrid, charges 80 and saves",
+  "desktop: unaffordable fusion disabled; battle result banner captured after it appears",
+  "mobile: cancel generation does not add a creature",
+  "mobile: full-party summon saved in Dex without growing party",
+  "mobile: kept fusion consumes two fixture parents, creates hybrid, charges 80 and saves",
+  "mobile: unaffordable fusion disabled; battle result banner captured after it appears"
+]

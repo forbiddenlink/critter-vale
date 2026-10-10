@@ -1,0 +1,22 @@
+[
+  {
+    "test": "escape-trainer",
+    "status": "failed",
+    "message": "Escape should leave a trainer conversation without starting combat\n\n1 !== 0\n"
+  },
+  {
+    "test": "capture-xp",
+    "status": "failed",
+    "message": "A successful capture should award XP"
+  },
+  {
+    "test": "accurate-healing",
+    "status": "failed",
+    "message": "Healing feedback must report the HP actually restored\n+ actual - expected\n\n+ 'Emberpup recovered 40 HP!'\n- 'Emberpup recovered 5 HP!'\n                      ^\n"
+  },
+  {
+    "test": "choose-lead",
+    "status": "failed",
+    "message": "A healthy partner needs a way to become the starting critter before a trial\n\n0 !== 1\n"
+  }
+]

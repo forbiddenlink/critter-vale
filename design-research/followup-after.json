@@ -1,0 +1,70 @@
+[
+  {
+    "violations": [],
+    "name": "touch-portrait",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "hudOverlapsMovement": false,
+    "promptOverlapsTools": false,
+    "promptOverlapsHud": false,
+    "hudOverlapsTools": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "keyboardPartyScroll": "passed without moving player",
+    "lastPartyMember": "reachable",
+    "errors": []
+  },
+  {
+    "violations": [],
+    "name": "touch-landscape",
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "hudOverlapsMovement": false,
+    "promptOverlapsTools": false,
+    "promptOverlapsHud": false,
+    "hudOverlapsTools": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "keyboardPartyScroll": "passed without moving player",
+    "lastPartyMember": "reachable",
+    "errors": []
+  },
+  {
+    "violations": [],
+    "name": "touch-landscape-small",
+    "viewport": {
+      "width": 667,
+      "height": 375
+    },
+    "hudOverlapsMovement": false,
+    "promptOverlapsTools": false,
+    "promptOverlapsHud": false,
+    "hudOverlapsTools": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "keyboardPartyScroll": "passed without moving player",
+    "lastPartyMember": "reachable",
+    "errors": []
+  },
+  {
+    "violations": [],
+    "name": "touch-small",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "hudOverlapsMovement": false,
+    "promptOverlapsTools": false,
+    "promptOverlapsHud": false,
+    "hudOverlapsTools": false,
+    "touchHoldAndRelease": "passed",
+    "guideFocusWrap": "passed",
+    "keyboardPartyScroll": "passed without moving player",
+    "lastPartyMember": "reachable",
+    "errors": []
+  }
+]

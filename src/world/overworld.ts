@@ -201,6 +201,7 @@ export class Overworld {
   private nearDoor: Building | null = null;
   private inHealer = false;
   active = true;
+  inputBlocked: () => boolean = () => false;
 
   // raycaster hover-glow + camera parallax
   private npcSprites: THREE.Sprite[] = [];
@@ -228,11 +229,15 @@ export class Overworld {
     this.buildHealer();
 
     window.addEventListener("keydown", (e) => {
+      if (this.inputBlocked() || (e.target instanceof HTMLElement && e.target.matches('input, textarea, select'))) return;
+      if ((e.key === " " || e.key === "Enter") && e.target instanceof HTMLElement && e.target.closest('button, a[href], summary')) return;
       const k = e.key.toLowerCase();
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright", "e", " "].includes(k)) e.preventDefault();
       this.input.keyDown(k);
       if (k === "e" || k === " ") this.interact();
     });
     window.addEventListener("keyup", (e) => this.input.keyUp(e.key));
+    window.addEventListener("blur", () => this.input.clear());
     window.addEventListener("pointermove", (e) => {
       this.pointerNdc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       this.pointer.set(this.pointerNdc.x, this.pointerNdc.y);
@@ -524,7 +529,7 @@ export class Overworld {
     // gentle sprite bob
     this.player.material.rotation = 0;
 
-    if (!this.active) return;
+    if (!this.active || this.inputBlocked()) { this.input.clear(); return; }
     const { x: dx, z: dz } = this.input.axis();
 
     const moving = dx !== 0 || dz !== 0;
@@ -614,13 +619,18 @@ export class Overworld {
     this.input.clear();
   }
 
+  setMovementKey(key: string, pressed: boolean): void {
+    if (!pressed) this.input.keyUp(key);
+    else if (!this.inputBlocked() && this.active) this.input.keyDown(key);
+  }
+
   getPos(): { x: number; z: number } {
     return { x: this.player.position.x, z: this.player.position.z };
   }
 
   /** Trigger the nearby interaction (talk / battle). Safe to call from a click or key. */
   interact() {
-    if (!this.active) return;
+    if (!this.active || this.inputBlocked()) { this.input.clear(); return; }
     if (this.nearNpc) {
       this.active = false;
       this.onInteract?.(this.nearNpc);
@@ -632,7 +642,7 @@ export class Overworld {
 
   /** Contextual action hint for the HUD, or null when there's nothing to interact with. */
   hint(): string | null {
-    if (!this.active) return null;
+    if (!this.active || this.inputBlocked()) return null;
     if (this.nearNpc) {
       return this.nearNpc.challenge
         ? `⚔ Press E to battle ${this.nearNpc.name}`

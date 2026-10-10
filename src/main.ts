@@ -5,15 +5,17 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
+import { installOverlayAccessibility } from "./ui/accessibility";
+import { openFieldGuide } from "./ui/fieldGuide";
+import { spriteUrl } from "./game/customSpecies";
 import { Overworld, BLOOM_LAYER } from "./world/overworld";
 import type { Npc } from "./world/overworld";
-import { makeCritter } from "./game/battle";
+import { makeCritter, xpToNext } from "./game/battle";
 import type { Critter } from "./game/battle";
 import { SPECIES, STARTERS } from "./game/critters";
 import type { Element } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
-import { mountTouchControls } from "./ui/touchControls";
 import { openSummonLab } from "./ui/summonLab";
 import { openFusionLab } from "./ui/fusionLab";
 import { registerCustom } from "./game/customSpecies";
@@ -23,11 +25,13 @@ import type { Bag, ItemId } from "./game/items";
 import { sfx, startMusic, toggleMusic } from "./audio";
 import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
+import { quirkDef } from "./game/traits";
 
-const app = document.querySelector<HTMLDivElement>("#app")!;
+const app = document.querySelector<HTMLElement>("#app")!;
+installOverlayAccessibility();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, matchMedia("(max-width: 760px)").matches ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -43,6 +47,7 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has("spec
 
 const world = new Overworld(window.innerWidth / window.innerHeight);
 world.active = false; // frozen until a starter is chosen
+world.inputBlocked = () => !!document.querySelector(".title, .dex, .interior, .summon, .dialog, .faint, .victory, .field-guide, .battle");
 
 // --- selective bloom: only emissive "lantern" heroes on BLOOM_LAYER glow ---
 // Everything else is temporarily painted black for the bloom pass, then restored.
@@ -133,25 +138,46 @@ const MAX_TEAM = 6;
 
 const hud = document.createElement("div");
 hud.className = "hud";
+hud.addEventListener("keydown", (event: KeyboardEvent): void => {
+  if (event.key.startsWith("Arrow")) event.stopPropagation();
+});
+hud.addEventListener("click", (event: MouseEvent): void => {
+  const button = event.target instanceof HTMLElement ? event.target.closest<HTMLButtonElement>(".party-lead") : null;
+  if (!button || world.inputBlocked()) return;
+  const index = Number(button.dataset.index);
+  if (!Number.isInteger(index) || index < 0 || index >= team.length || team[index].hp <= 0) return;
+  const [partner] = team.splice(index, 1);
+  team.unshift(partner);
+  drawHud();
+  persist();
+  showToast(`${partner.species.name} will lead your next battle.`);
+  hud.querySelector<HTMLElement>(".hud-party")?.focus({ preventScroll: true });
+});
 document.body.appendChild(hud);
 
 const mute = document.createElement("button");
 mute.className = "mute";
-mute.textContent = "🔊";
+mute.textContent = "Sound on";
+mute.setAttribute("aria-label", "Sound on: toggle music");
+mute.setAttribute("aria-pressed", "true");
 mute.title = "Toggle music";
-mute.setAttribute("aria-label", "Toggle music");
 mute.addEventListener("click", () => {
-  mute.textContent = toggleMusic() ? "🔊" : "🔇";
+  const enabled = toggleMusic();
+  mute.textContent = enabled ? "Sound on" : "Sound off";
+  mute.setAttribute("aria-label", `${mute.textContent}: toggle music`);
+  mute.setAttribute("aria-pressed", String(enabled));
 });
 document.body.appendChild(mute);
 function drawHud() {
   if (!team.length) return;
-  const crestBadges =
-    (crests.has("Ember") ? "🔥" : "") + (crests.has("Aqua") ? "💧" : "") + (crests.has("Leaf") ? "🍃" : "");
-  const rank = isChampion ? " · 👑 Champion" : crestBadges ? ` · Crests ${crestBadges}` : "";
-  hud.innerHTML = `<strong>Critter Vale</strong> · Sprout Hollow · 🌱 ${sprigs} Sprigs${rank}<br>Team: ${team
-    .map((m) => `${m.species.name} Lv${m.level} (${m.hp}/${m.maxHp} HP)`)
-    .join(", ")}<br>Caught: ${caught.length ? caught.join(", ") : "none yet"}<br><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small>`;
+  const objective = isChampion ? "Champion of the Vale. Keep discovering." : crests.size === 3 ? "Challenge Champion Sol at the Wellspring." : caughtIds.size < 2 ? "Find your next partner in the tall grass." : `Earn the Warden crests · ${crests.size} / 3`;
+  const leadIndex = team.findIndex((m) => m.hp > 0);
+  hud.innerHTML = `<div class="hud-heading"><strong>Critter Vale<span aria-hidden="true">✳</span></strong><span class="hud-location">SPROUT HOLLOW</span></div>
+    <div class="hud-resources"><span>${sprigs} <small>Sprigs</small></span><span>${caughtIds.size} <small>caught</small></span><span>${crests.size}/3 <small>crests</small></span></div>
+    <div class="hud-party-title">YOUR TEAM <span>${team.length} / ${MAX_TEAM}</span></div>
+    <div class="hud-party" role="region" aria-label="Your party" tabindex="0">${team.map((m, index) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div><p class="party-trait">${m.species.element} · ${quirkDef(m.quirk).name}</p><p class="party-xp">${m.level >= 100 ? "Max level" : `${m.xp} / ${xpToNext(m.level)} XP to Lv ${m.level + 1}`}</p></div><small>${m.hp}/${m.maxHp}</small><button class="party-lead" data-index="${index}" aria-label="${index === leadIndex ? `${m.species.name} leads your next battle` : `Make ${m.species.name} your lead critter`}"${index === leadIndex || m.hp <= 0 ? " disabled" : ""}>${index === leadIndex ? "Leading" : m.hp <= 0 ? "Fainted" : "Lead"}</button></div>`).join("")}</div>
+    <div class="hud-objective"><span class="eyebrow">NEXT IN YOUR JOURNAL</span><p>${objective}</p></div>
+    <details class="hud-notes"><summary>Trail notes &amp; controls</summary><p>Caught: ${caught.length ? caught.join(", ") : "none yet"}</p><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small><p>Ember ${crests.has("Ember") ? "✓" : "—"} · Aqua ${crests.has("Aqua") ? "✓" : "—"} · Leaf ${crests.has("Leaf") ? "✓" : "—"}</p></details>`;
 }
 
 function persist() {
@@ -247,6 +273,7 @@ function startTrainer(npc: Npc) {
 world.onInteract = (npc) => {
   const d = document.createElement("div");
   d.className = "dialog";
+  d.tabIndex = 0;
   let i = 0;
   // The Champion is sealed until you hold all three Crests.
   const gated = !!npc.champion && crests.size < 3;
@@ -254,20 +281,21 @@ world.onInteract = (npc) => {
     ? ["The path to the Wellspring is sealed.", "Return when you hold all three Crests: Ember, Aqua, and Leaf."]
     : npc.lines;
   const render = () => {
-    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${lines[i]}</p><div class="dialog-cont">▶ space / click${i < lines.length - 1 ? "" : " to close"}</div></div>`;
+    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${lines[i]}</p><div class="dialog-cont">Continue → space / click${i < lines.length - 1 ? "" : " to close"}</div></div>`;
   };
   const afterDialog = () => {
     if (!gated && npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
     else world.resume();
   };
-  const close = () => {
+  const close = (engage = false) => {
     d.remove();
     window.removeEventListener("keydown", onKey);
-    afterDialog();
+    if (engage) afterDialog();
+    else world.resume();
   };
   const advance = () => {
     i += 1;
-    if (i >= lines.length) close();
+    if (i >= lines.length) close(true);
     else render();
   };
   const onKey = (e: KeyboardEvent) => {
@@ -285,6 +313,7 @@ world.onInteract = (npc) => {
 function showToast(msg: string) {
   const t = document.createElement("div");
   t.className = "toast";
+  t.setAttribute("role", "status");
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2200);
@@ -320,7 +349,9 @@ function openShop() {
   const render = () => {
     root.innerHTML = `
       <div class="io-panel shop-panel" style="--c:#e0b45b">
+        <span class="eyebrow">SPROUT HOLLOW / PROVISIONS</span>
         <div class="io-head"><h2>Trading Post</h2><span class="shop-sprigs">🌱 ${sprigs}</span><button class="io-close" aria-label="Close">✕</button></div>
+        <p class="shop-help">Stock up for the trail. Win battles to earn more Sprigs.</p>
         <div class="shop-list">
           ${SHOP_ORDER.map((id) => {
             const it = ITEMS[id];
@@ -348,6 +379,8 @@ function openShop() {
         drawHud();
         sfx("levelup");
         render();
+        showToast(`${ITEMS[id].name} added to your bag.`);
+        root.querySelector<HTMLButtonElement>(`.shop-buy[data-id="${id}"]:not(:disabled)`)?.focus();
       });
     });
   };
@@ -412,10 +445,11 @@ function onSummoned(spec: CustomSpecies) {
   seen.add(spec.id);
   caughtIds.add(spec.id);
   if (!caught.includes(spec.name)) caught.push(spec.name);
-  if (team.length < MAX_TEAM) team.push(makeCritter(spec.id, 7));
+  const joinsParty = team.length < MAX_TEAM;
+  if (joinsParty) team.push(makeCritter(spec.id, 7));
   drawHud();
   persist();
-  showToast(`✨ ${spec.name} joined your party!`);
+  showToast(joinsParty ? `${spec.name} joined your party!` : `${spec.name} was kept in your Critter-Dex. Your party is full.`);
   sfx("levelup");
 }
 
@@ -447,6 +481,7 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
   const hex = `#${b.color.toString(16).padStart(6, "0")}`;
   root.innerHTML = `
     <div class="io-panel" style="--c:${hex}">
+      <span class="eyebrow">SPROUT HOLLOW / ${b.kind === "home" ? "REST STOP" : "RESEARCH"}</span>
       <div class="io-head"><h2>${b.name}</h2><button class="io-close" aria-label="Close">✕</button></div>
       <p class="io-body">${body}</p>
       <div class="io-actions">${extra}<button class="io-btn" data-act="leave">← Leave</button></div>
@@ -483,6 +518,7 @@ function showFaintScreen(onContinue: () => void) {
   root.className = "faint";
   root.innerHTML = `
     <div class="faint-inner">
+      <span class="eyebrow">A MOMENT TO REST</span>
       <h2>Whiteout!</h2>
       <p>All your critters fainted. You hurry back to Sprout Hollow to recover...</p>
       <button class="faint-btn">Continue</button>
@@ -510,6 +546,7 @@ function showVictory() {
   root.innerHTML = `
     <div class="victory-inner">
       <div class="victory-crown">👑</div>
+      <span class="eyebrow">THREE CRESTS. A NEW CHAPTER.</span>
       <h2>Champion of Critter Vale!</h2>
       <p>You bested Champion Sol and every Warden of the Vale. The Wellspring is yours to explore, endlessly.</p>
       <button class="victory-btn">Continue</button>
@@ -547,7 +584,7 @@ window.addEventListener("beforeunload", persist);
 // New Game button (clears save)
 const reset = document.createElement("button");
 reset.className = "mute reset";
-reset.textContent = "⟳";
+reset.textContent = "New game";
 reset.title = "New game (erases progress)";
 reset.setAttribute("aria-label", "New game (erases progress)");
 reset.addEventListener("click", () => {
@@ -564,16 +601,46 @@ document.body.appendChild(reset);
 
 const dexBtn = document.createElement("button");
 dexBtn.className = "mute dexbtn";
-dexBtn.textContent = "📖";
+dexBtn.textContent = "Critter-Dex";
 dexBtn.title = "Critter-Dex (C)";
 dexBtn.setAttribute("aria-label", "Open Critter-Dex");
 dexBtn.addEventListener("click", () => openDex(seen, caughtIds));
 document.body.appendChild(dexBtn);
 window.addEventListener("keydown", (e) => {
-  if (e.key.toLowerCase() === "c" && team.length && !document.querySelector(".battle, .dialog, .title")) {
+  if (e.key.toLowerCase() === "c" && team.length && !world.inputBlocked()) {
     openDex(seen, caughtIds);
   }
 });
+
+const guideBtn = document.createElement("button");
+guideBtn.className = "mute guidebtn";
+guideBtn.textContent = "Field guide";
+guideBtn.title = "Field guide (H)";
+guideBtn.addEventListener("click", openFieldGuide);
+const tools = document.createElement("nav");
+tools.className = "game-tools";
+tools.setAttribute("aria-label", "Game tools");
+tools.append(dexBtn, guideBtn, mute, reset);
+document.body.appendChild(tools);
+window.addEventListener("keydown", (event: KeyboardEvent): void => {
+  if (event.key.toLowerCase() === "h" && team.length && !world.inputBlocked()) openFieldGuide();
+});
+
+const touchControls = document.createElement("nav");
+touchControls.className = "touch-controls";
+touchControls.setAttribute("aria-label", "Movement controls");
+touchControls.innerHTML = `<div class="dpad">${[["w", "↑", "Move north"], ["a", "←", "Move west"], ["s", "↓", "Move south"], ["d", "→", "Move east"]].map(([key, symbol, label]) => `<button data-key="${key}" aria-label="${label}">${symbol}</button>`).join("")}</div><button class="touch-interact" aria-label="E Interact with nearby person or building">E<span>Interact</span></button>`;
+touchControls.querySelectorAll<HTMLButtonElement>("[data-key]").forEach((button: HTMLButtonElement): void => {
+  const key = button.dataset.key!;
+  button.addEventListener("pointerdown", (event: PointerEvent): void => {
+    event.preventDefault(); button.setPointerCapture(event.pointerId); world.setMovementKey(key, true);
+  });
+  for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    button.addEventListener(name, (): void => world.setMovementKey(key, false));
+  }
+});
+touchControls.querySelector(".touch-interact")!.addEventListener("click", (): void => world.interact());
+document.body.appendChild(touchControls);
 
 function armMusicOnGesture() {
   const start = () => {
@@ -617,20 +684,29 @@ function showTitle(notice?: string) {
   title.className = "title";
   title.innerHTML = `
     <div class="title-inner">
-      <h1>Critter Vale</h1>
+      <header class="title-masthead"><span class="wordmark">CV<span class="brand-sprout" aria-hidden="true">✳</span></span><span>THE VALE FIELD JOURNAL</span><span class="edition">A creature-collecting adventure</span></header>
+      <div class="title-intro">
+        <div><span class="eyebrow">YOUR ADVENTURE STARTS SMALL</span><h1>Critter <em>Vale.</em></h1></div>
+        <p>A curious world. A little wild company.<br>Explore the Vale, raise your team, and find<br class="desktop-break"> a partner for every adventure.</p>
+      </div>
+      <div class="starter-heading"><h2>Choose your first partner</h2><span>THREE ELEMENTS. ONE FIRST FRIEND.</span></div>
+      <span class="title-scroll-note">Scroll to meet all three partners ↓</span>
       ${notice ? `<p class="notice" role="alert">${notice}</p>` : ""}
-      <p>Choose your first partner</p>
       <div class="starters">
-        ${STARTERS.map((id) => {
+        ${STARTERS.map((id, index) => {
           const s = SPECIES[id];
+          const strength = s.element === "Ember" ? "Leaf" : s.element === "Aqua" ? "Ember" : "Aqua";
+          const temperament = s.element === "Ember" ? "A spark of possibility." : s.element === "Aqua" ? "Go with the current." : "Room to grow wild.";
           return `<button class="starter holo" data-id="${id}" style="--c:${s.color}">
-            <img src="/sprites/${id}.png" alt="">
-            <span class="s-name">${s.name}</span>
-            <span class="s-el">${s.element}</span>
+            <span class="specimen-index">PARTNER 0${index + 1}<span class="s-el">${s.element}</span></span>
+            <span class="specimen-art"><img src="/sprites/${id}-title.webp" width="240" height="240" alt="" fetchpriority="high"></span>
+            <span class="specimen-copy"><span class="s-name">${s.name}</span><span class="s-description">${temperament}</span></span>
+            <span class="starter-facts"><span>Strong against ${strength}</span><span>Lv 6</span></span>
+            <span class="starter-cta">Begin with ${s.name}<span aria-hidden="true">↗</span></span>
           </button>`;
         }).join("")}
       </div>
-      <p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p>
+      <footer class="title-footer"><p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p><p><kbd>WASD</kbd> move <span>·</span> <kbd>E</kbd> interact <span>·</span> Touch controls on mobile</p><small>Progress saves in this browser. No account needed.</small></footer>
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
@@ -638,6 +714,7 @@ function showTitle(notice?: string) {
 
   title.querySelectorAll<HTMLButtonElement>(".starter").forEach((btn) => {
     btn.addEventListener("click", () => {
+      if (team.length) return;
       team.push(makeCritter(btn.dataset.id!, 6));
       Object.assign(bag, starterBag()); // Prof. Hollis's starting kit
       sprigs = STARTER_SPRIGS;
@@ -682,10 +759,10 @@ if (saved.status === "ok") {
   showTitle(saved.status === "corrupt" ? UNREADABLE_SAVE : undefined);
 }
 
-mountTouchControls(world.input, () => world.interact());
 
-const prompt = document.createElement("div");
+const prompt = document.createElement("button");
 prompt.className = "prompt";
+prompt.hidden = true;
 prompt.addEventListener("click", () => world.interact());
 document.body.appendChild(prompt);
 
@@ -696,12 +773,14 @@ function loop(now: number) {
   world.update(dt);
   const hint = world.hint();
   if (hint) {
+    prompt.hidden = false;
     prompt.textContent = hint;
     prompt.classList.add("show");
   } else {
     prompt.classList.remove("show");
+    prompt.hidden = true;
   }
-  renderScene();
+  if (!document.hidden && !document.querySelector(".title, .battle, .faint, .victory")) renderScene();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);

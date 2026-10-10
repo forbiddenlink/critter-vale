@@ -1,0 +1,74 @@
+{
+  "team": [
+    {
+      "id": "emberwulf",
+      "level": 16,
+      "xp": 1135,
+      "hp": 80,
+      "quirk": "skittish"
+    },
+    {
+      "id": "bramblor",
+      "level": 16,
+      "xp": 59,
+      "hp": 99,
+      "quirk": "stoneheart"
+    },
+    {
+      "id": "coralux",
+      "level": 14,
+      "xp": 550,
+      "hp": 74,
+      "quirk": "thornskin"
+    }
+  ],
+  "caught": [],
+  "pos": {
+    "x": 0.04760000000000264,
+    "z": -15.99609999999792
+  },
+  "seen": [
+    "emberpup",
+    "mothbit",
+    "tadmite",
+    "sproutle",
+    "ripplet",
+    "brinefin",
+    "scorchick",
+    "cindershrew",
+    "leaflet",
+    "emberwulf",
+    "thornmaw",
+    "torretoad",
+    "bramblor",
+    "coralux"
+  ],
+  "caughtIds": [
+    "emberpup",
+    "sproutle",
+    "ripplet",
+    "emberwulf",
+    "bramblor",
+    "coralux"
+  ],
+  "custom": [],
+  "sprigs": 5096,
+  "bag": {
+    "vale-ball": 1,
+    "dew-potion": 0,
+    "revive": 2
+  },
+  "crests": [
+    "Leaf",
+    "Ember",
+    "Aqua"
+  ],
+  "champion": true,
+  "beaten": [
+    "Ranger Bex",
+    "Warden Fern",
+    "Warden Pyra",
+    "Warden Marlow",
+    "Champion Sol"
+  ]
+}

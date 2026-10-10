@@ -1,0 +1,646 @@
+[
+  {
+    "id": "moonstone",
+    "url": "https://www.moonstoneisland.com/",
+    "kind": "competitor",
+    "status": 200,
+    "finalUrl": "https://www.moonstoneisland.com/",
+    "title": "Moonstone Island",
+    "text": "Wishlist us on Steam\nFollow us on Twitter\nFollow us on TikTok\nJoin Our Newsletter\nMoonstone Mail\nSign up to be a penpal for updates and other really cool stuff!",
+    "links": [
+      {
+        "text": "Wishlist us on Steam",
+        "url": "https://store.steampowered.com/app/1658150/Moonstone_Island/"
+      },
+      {
+        "text": "Follow us on Twitter",
+        "url": "https://twitter.com/Moonstone_game"
+      },
+      {
+        "text": "Follow us on TikTok",
+        "url": "https://www.tiktok.com/@moonstone_island_game"
+      },
+      {
+        "text": "Join Our Newsletter",
+        "url": "https://www.moonstoneisland.com/#newsletter"
+      },
+      {
+        "text": "{\n  \"items\": [\n    {\n      \"_id\": \"65e8892e63005a6cee2541e4\",\n      \"origFileName\": \"ss_03b36a8df8397f3bfdddfeb33bb1825dae3167b0.800x600.jpg\",\n      \"fileName\": \"ss_03b36a8df8397f3bfdddfeb33bb1825dae3167b0.800x600.jpg\",\n      \"fileSize\": 198372,\n      \"height\": 450,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892e63005a6cee2541e4_ss_03b36a8df8397f3bfdddfeb33bb1825dae3167b0.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    },\n    {\n      \"_id\": \"65e8892f0e34d6b7ba7351b0\",\n      \"origFileName\": \"ss_9d7265914b7f05376461641f854ec146b9b1e4e1.800x600.jpg\",\n      \"fileName\": \"ss_9d7265914b7f05376461641f854ec146b9b1e4e1.800x600.jpg\",\n      \"fileSize\": 119143,\n      \"height\": 400,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892f0e34d6b7ba7351b0_ss_9d7265914b7f05376461641f854ec146b9b1e4e1.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    },\n    {\n      \"_id\": \"65e8892e772c276a9d67c7db\",\n      \"origFileName\": \"ss_100de3d8d2938760c833de2775fe7d790fd417e8.800x600.jpg\",\n      \"fileName\": \"ss_100de3d8d2938760c833de2775fe7d790fd417e8.800x600.jpg\",\n      \"fileSize\": 106911,\n      \"height\": 450,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892e772c276a9d67c7db_ss_100de3d8d2938760c833de2775fe7d790fd417e8.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    },\n    {\n      \"_id\": \"65e8892e6dfea9b5073c4e33\",\n      \"origFileName\": \"ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"fileName\": \"ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"fileSize\": 188162,\n      \"height\": 450,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892e6dfea9b5073c4e33_ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    },\n    {\n      \"_id\": \"65e8892f29115343ed19011a\",\n      \"origFileName\": \"ss_e1889c650ee856d049eee5bcf0ec6b84218c9c91.800x600.jpg\",\n      \"fileName\": \"ss_e1889c650ee856d049eee5bcf0ec6b84218c9c91.800x600.jpg\",\n      \"fileSize\": 122825,\n      \"height\": 415,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892f29115343ed19011a_ss_e1889c650ee856d049eee5bcf0ec6b84218c9c91.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    },\n    {\n      \"_id\": \"65e8892e6dfea9b5073c4e33\",\n      \"origFileName\": \"ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"fileName\": \"ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"fileSize\": 188162,\n      \"height\": 450,\n      \"url\": \"https://cdn.prod.website-files.com/620d20e15b75dc83485411eb/65e8892e6dfea9b5073c4e33_ss_e2e10f28b6de16403ff62f78de5dffd884b27dab.800x600.jpg\",\n      \"width\": 800,\n      \"type\": \"image\"\n    }\n  ],\n  \"group\": \"\"\n}",
+        "url": "https://www.moonstoneisland.com/#"
+      }
+    ],
+    "screenshot": "screenshots/references/moonstone.png"
+  },
+  {
+    "id": "nexomon-steam",
+    "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/",
+    "kind": "competitor",
+    "status": 200,
+    "finalUrl": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/",
+    "title": "Nexomon: Extinction on Steam",
+    "text": "STORE\nCOMMUNITY\nABOUT\nSUPPORT\nInstall Steam sign in  |  language\nBrowse\nRecommendations\nCategories\nHardware\nWays to Play\nSpecial Sections\nAdvanced Search\nOpen in Desktop App\nYou're not signed in!\nOpen this page in the Steam App to wishlist, follow, purchase and see recommendations\nAll Games > RPG Games > Nexomon: Extinction\nCommunity Hub\nNexomon: Extinction\nNexomon: Extinction is a return to classic monster catching games, with a brand new story, eccentric characters and over 300 unique Nexomon to trap, tame and evolve.\nRECENT REVIEWS:\nMostly Positive (24)\nENGLISH REVIEWS:\nVery Positive (1,567)\nRELEASE DATE:\nAug 28, 2020\nDEVELOPER:\nVEWO Interactive Inc.\nPUBLISHER:\nPQube, VEWO Interactive Inc.\nPopular user-defined tags for this product:\nCreature CollectorTurn-Based CombatRPGCasual+\n0:00\n/\n0:44\n\nSign in to add this item to your wishlist, follow it, or mark it as ignored\n\nSingle-player\nSteam Achievements\nSteam Cloud\nFamily Sharing\nFull Controller Support\nXbox Controllers\nSupport for other devices is not known\nLanguages:\n\tInterface\tFull Audio\tSubtitles\nEnglish\t✔\t\t\nFrench\t✔\t\t\nItalian\t✔\t\t\nGerman\t✔\t\t\nSpanish - Spain\t✔\t\t\nSee all 8 supported languages\nSTEAM DECK COMPATIBILITY\nPlayable\nLearn more\nSteam Achievements\nView all 56\nTITLE: Nexomon: Extinction\nGENRE: Action, Adventure, Casual, Indie, RPG, Simulation\n\nDEVELOPER: VEWO Interactive Inc.\nPUBLISHER: PQube, VEWO Interactive Inc.\nFRANCHISE: Nexomon\nRELEASE DATE: Aug 28, 2020\n\nVisit the website \n Facebook \n X \n YouTube \n Discord \nView update history\nRead related news\nView discussions\nFind Community Groups\nEmbed\n \n \nBuy Nexomon: Extinction\n$19.99 \nAdd to Cart\n \nAbout This Game\n\nNexomon: Extinction is a return to classic monster catching games, complete with a brand new story, eccentric characters and over 300 unique Nexomon to trap and tame. The world is on the brink of extinction as mighty Tyrant Nexomon fight for dominion over humans and monsters. Join the Tamer's guild and begin an epic journey to restore balance before all hope is lost…\n\nBegin Your Journey\n\nLeave the orphanage you grew up in, choose your first Nexomon and start your life as a Tamer.\n\nExplore a world teeming with Nexomon\n\nTrap and tame 381 Nexomon from nine elemental types, with powerful evolutions.\n\nJoin the Fight\n\nTyrant Nexomon roam free and the Tamer's Guild is stretched to the limit, can you change the tide of the battle?\n\nBattle Trainers and Tyrants\n\nStep up and take on would-be challengers and dangerous foes in beautifully animated turn-based battles.\n\nDiscover Diverse Regions\n\nFrom arid deserts to freezing tundra, navigate challenging environments and manage their effects on your Nexomon.\n\nImmerse yourself in the world of Nexomon\n\nUncover secrets, stumble upon side-quests and encounter a raft of eccentric characters.\n\nTrain hard to become the greatest\n\nDynamic difficulty will see the world around you get more challenging as you progress, as even defeated trainers come back stronger than before and ready to battle again!\n\nREAD MORE\nSystem Requirements\nWindows\nmacOS\nMINIMUM:\n\nOS *: Windows XP\n\nGRAPHICS: Open GL 3.2+ Compliant\n\nADDITIONAL NOTES: 1080p, 16:9 recommended\nRECOMMENDED:\n\nOS *: Windows 7+\n\nGRAPHICS: Open GL 3.2+ Compliant\n\nADDITIONAL NOTES: 1080p, 16:9 recommended\n* Starting January 1st, 2024, the Steam Client will only support Windows 10 and later versions.\n\n©2019-2020 VEWO Interactive Inc.\n\nMORE LIKE THIS\nSee All\n-30%\n$29.99\n$20.99\n$29.99\n$7.99\n-20%\n$59.99\n$47.99\n$39.99\n-50%\n$19.99\n$9.99\n$14.99\n-36%\n$44.98\n$28.78\nView all\nWhat Curators Say\n117 Curators have reviewed this product. Click here to see them.\nCustomer reviews for Nexomon: Extinction\nSee language breakdown\nAbout user reviews\nYour preferences\nENGLISH REVIEWS:\nVery Positive\n(1,567 reviews)\nTotal reviews in all languages:\n3,731\nVery Positive\nRecent Reviews in all languages:\n24\nMostly Positive\nReview Type\nPurchase Type\nLanguage\nDate Range\nPlaytime\nDisplay\nShow graph\nFilters\nYour Languages\n\n© 2026 Valve Corporation. All rights reserved. All trademarks are property of their respective owners in the US and other countries.\nVAT included in all prices where applicable.\n\nSTEAM\nAbout Steam\nSteam SSA\nSteamworks\nSteam Distribution\nGift Cards\nVALVE\nAbout Valve\nJobs\nHardware\nRecycling\nLEGAL\nPrivacy\nAccessibility\nNotices & Policies\nCookies\nRefunds\nMORE\nGet Steam\nGet Mobile Apps\nGet Support\nMy Account",
+    "links": [
+      {
+        "text": "Sign in",
+        "url": "https://store.steampowered.com/login/?redir=app%2F1196630%2FNexomon_Extinction%2F&redir_ssl=1&snr=1_5_9__global-header"
+      },
+      {
+        "text": "Store",
+        "url": "https://store.steampowered.com/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Home",
+        "url": "https://store.steampowered.com/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Discovery Queue",
+        "url": "https://store.steampowered.com/explore/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Wishlist",
+        "url": "https://store.steampowered.com/wishlist/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Points Shop",
+        "url": "https://store.steampowered.com/points/shop/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "News",
+        "url": "https://store.steampowered.com/news/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Charts",
+        "url": "https://store.steampowered.com/stats/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Community",
+        "url": "https://steamcommunity.com/"
+      },
+      {
+        "text": "Home",
+        "url": "https://steamcommunity.com/"
+      },
+      {
+        "text": "Discussions",
+        "url": "https://steamcommunity.com/discussions/"
+      },
+      {
+        "text": "Workshop",
+        "url": "https://steamcommunity.com/workshop/"
+      },
+      {
+        "text": "Market",
+        "url": "https://steamcommunity.com/market/"
+      },
+      {
+        "text": "Broadcasts",
+        "url": "https://steamcommunity.com/?subsection=broadcasts"
+      },
+      {
+        "text": "About",
+        "url": "https://store.steampowered.com/about/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Support",
+        "url": "https://help.steampowered.com/en/"
+      },
+      {
+        "text": "Get the Steam Mobile App",
+        "url": "https://store.steampowered.com/mobile"
+      },
+      {
+        "text": "Privacy Policy",
+        "url": "https://store.steampowered.com/privacy_agreement/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Legal",
+        "url": "http://www.valvesoftware.com/legal.htm"
+      },
+      {
+        "text": "Accessibility",
+        "url": "https://help.steampowered.com/faqs/view/10BB-D27A-6378-4436"
+      },
+      {
+        "text": "Steam Subscriber Agreement",
+        "url": "https://store.steampowered.com/subscriber_agreement/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Refunds",
+        "url": "https://store.steampowered.com/steam_refunds/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "Cookies",
+        "url": "https://store.steampowered.com/account/cookiepreferences/?snr=1_5_9__global-responsive-menu"
+      },
+      {
+        "text": "STORE",
+        "url": "https://store.steampowered.com/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "Home",
+        "url": "https://store.steampowered.com/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "Discovery Queue",
+        "url": "https://store.steampowered.com/explore/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "Wishlist",
+        "url": "https://store.steampowered.com/wishlist/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "Points Shop",
+        "url": "https://store.steampowered.com/points/shop/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "News",
+        "url": "https://store.steampowered.com/news/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "Charts",
+        "url": "https://store.steampowered.com/stats/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "COMMUNITY",
+        "url": "https://steamcommunity.com/"
+      },
+      {
+        "text": "Home",
+        "url": "https://steamcommunity.com/"
+      },
+      {
+        "text": "Discussions",
+        "url": "https://steamcommunity.com/discussions/"
+      },
+      {
+        "text": "Workshop",
+        "url": "https://steamcommunity.com/workshop/"
+      },
+      {
+        "text": "Market",
+        "url": "https://steamcommunity.com/market/"
+      },
+      {
+        "text": "Broadcasts",
+        "url": "https://steamcommunity.com/?subsection=broadcasts"
+      },
+      {
+        "text": "About",
+        "url": "https://store.steampowered.com/about/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "SUPPORT",
+        "url": "https://help.steampowered.com/en/"
+      },
+      {
+        "text": "Install Steam",
+        "url": "https://store.steampowered.com/about/?snr=1_5_9__global-header"
+      },
+      {
+        "text": "sign in",
+        "url": "https://store.steampowered.com/login/?redir=app%2F1196630%2FNexomon_Extinction%2F&redir_ssl=1&snr=1_5_9__global-header"
+      },
+      {
+        "text": "简体中文 (Simplified Chinese)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=schinese"
+      },
+      {
+        "text": "繁體中文 (Traditional Chinese)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=tchinese"
+      },
+      {
+        "text": "日本語 (Japanese)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=japanese"
+      },
+      {
+        "text": "한국어 (Korean)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=koreana"
+      },
+      {
+        "text": "ไทย (Thai)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=thai"
+      },
+      {
+        "text": "Bahasa Indonesia (Indonesian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=indonesian"
+      },
+      {
+        "text": "Bahasa Melayu (Malay)\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tBETA",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=malay"
+      },
+      {
+        "text": "Български (Bulgarian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=bulgarian"
+      },
+      {
+        "text": "Čeština (Czech)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=czech"
+      },
+      {
+        "text": "Dansk (Danish)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=danish"
+      },
+      {
+        "text": "Deutsch (German)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=german"
+      },
+      {
+        "text": "Español - España (Spanish - Spain)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=spanish"
+      },
+      {
+        "text": "Español - Latinoamérica (Spanish - Latin America)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=latam"
+      },
+      {
+        "text": "Ελληνικά (Greek)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=greek"
+      },
+      {
+        "text": "Français (French)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=french"
+      },
+      {
+        "text": "Italiano (Italian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=italian"
+      },
+      {
+        "text": "Magyar (Hungarian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=hungarian"
+      },
+      {
+        "text": "Nederlands (Dutch)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=dutch"
+      },
+      {
+        "text": "Norsk (Norwegian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=norwegian"
+      },
+      {
+        "text": "Polski (Polish)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=polish"
+      },
+      {
+        "text": "Português (Portuguese - Portugal)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=portuguese"
+      },
+      {
+        "text": "Português - Brasil (Portuguese - Brazil)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=brazilian"
+      },
+      {
+        "text": "Română (Romanian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=romanian"
+      },
+      {
+        "text": "Русский (Russian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=russian"
+      },
+      {
+        "text": "Suomi (Finnish)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=finnish"
+      },
+      {
+        "text": "Svenska (Swedish)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=swedish"
+      },
+      {
+        "text": "Türkçe (Turkish)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=turkish"
+      },
+      {
+        "text": "Tiếng Việt (Vietnamese)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=vietnamese"
+      },
+      {
+        "text": "Українська (Ukrainian)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/?l=ukrainian"
+      },
+      {
+        "text": "Report a translation problem",
+        "url": "https://www.valvesoftware.com/contact?contact-person=Translation%20Team%20Feedback"
+      },
+      {
+        "text": "Advanced Search",
+        "url": "https://store.steampowered.com/search/?term=&snr=1_7_15__advancedsearch"
+      },
+      {
+        "text": "All Games",
+        "url": "https://store.steampowered.com/search/?term=&snr=1_5_9__205"
+      },
+      {
+        "text": "RPG Games",
+        "url": "https://store.steampowered.com/genre/RPG/?snr=1_5_9__205"
+      },
+      {
+        "text": "Nexomon: Extinction",
+        "url": "https://store.steampowered.com/app/1196630/?snr=1_5_9__205"
+      },
+      {
+        "text": "Community Hub",
+        "url": "https://steamcommunity.com/app/1196630"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?developer=VEWO%20Interactive%20Inc.&snr=1_5_9__400"
+      },
+      {
+        "text": "PQube",
+        "url": "https://store.steampowered.com/search/?publisher=PQube&snr=1_5_9__422"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?publisher=VEWO%20Interactive%20Inc.&snr=1_5_9__422"
+      },
+      {
+        "text": "Recent Reviews:\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\tMostly Positive\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t(24)\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t- 79% of the 24 user reviews in the last 30 days are positive.",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#app_reviews_hash"
+      },
+      {
+        "text": "English Reviews:\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tVery Positive\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t(1,567)\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t- 88% of the 1,567 user reviews for this game are positive.",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#app_reviews_hash"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?developer=VEWO%20Interactive%20Inc.&snr=1_5_9__2000"
+      },
+      {
+        "text": "PQube",
+        "url": "https://store.steampowered.com/search/?publisher=PQube&snr=1_5_9__422"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?publisher=VEWO%20Interactive%20Inc.&snr=1_5_9__422"
+      },
+      {
+        "text": "Creature Collector",
+        "url": "https://store.steampowered.com/tags/en/Creature%20Collector/?snr=1_5_9__409"
+      },
+      {
+        "text": "Turn-Based Combat",
+        "url": "https://store.steampowered.com/tags/en/Turn-Based%20Combat/?snr=1_5_9__409"
+      },
+      {
+        "text": "RPG",
+        "url": "https://store.steampowered.com/tags/en/RPG/?snr=1_5_9__409"
+      },
+      {
+        "text": "Casual",
+        "url": "https://store.steampowered.com/tags/en/Casual/?snr=1_5_9__409"
+      },
+      {
+        "text": "Top-Down",
+        "url": "https://store.steampowered.com/tags/en/Top-Down/?snr=1_5_9__409"
+      },
+      {
+        "text": "Funny",
+        "url": "https://store.steampowered.com/tags/en/Funny/?snr=1_5_9__409"
+      },
+      {
+        "text": "Singleplayer",
+        "url": "https://store.steampowered.com/tags/en/Singleplayer/?snr=1_5_9__409"
+      },
+      {
+        "text": "Adventure",
+        "url": "https://store.steampowered.com/tags/en/Adventure/?snr=1_5_9__409"
+      },
+      {
+        "text": "Colorful",
+        "url": "https://store.steampowered.com/tags/en/Colorful/?snr=1_5_9__409"
+      },
+      {
+        "text": "Family Friendly",
+        "url": "https://store.steampowered.com/tags/en/Family%20Friendly/?snr=1_5_9__409"
+      },
+      {
+        "text": "Simulation",
+        "url": "https://store.steampowered.com/tags/en/Simulation/?snr=1_5_9__409"
+      },
+      {
+        "text": "Indie",
+        "url": "https://store.steampowered.com/tags/en/Indie/?snr=1_5_9__409"
+      },
+      {
+        "text": "Action",
+        "url": "https://store.steampowered.com/tags/en/Action/?snr=1_5_9__409"
+      },
+      {
+        "text": "Exploration",
+        "url": "https://store.steampowered.com/tags/en/Exploration/?snr=1_5_9__409"
+      },
+      {
+        "text": "Anime",
+        "url": "https://store.steampowered.com/tags/en/Anime/?snr=1_5_9__409"
+      },
+      {
+        "text": "Cute",
+        "url": "https://store.steampowered.com/tags/en/Cute/?snr=1_5_9__409"
+      },
+      {
+        "text": "Arcade",
+        "url": "https://store.steampowered.com/tags/en/Arcade/?snr=1_5_9__409"
+      },
+      {
+        "text": "Story Rich",
+        "url": "https://store.steampowered.com/tags/en/Story%20Rich/?snr=1_5_9__409"
+      },
+      {
+        "text": "Comedy",
+        "url": "https://store.steampowered.com/tags/en/Comedy/?snr=1_5_9__409"
+      },
+      {
+        "text": "JRPG",
+        "url": "https://store.steampowered.com/tags/en/JRPG/?snr=1_5_9__409"
+      },
+      {
+        "text": "All Reviews:\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tEnglish Reviews\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tVery Positive\n\t\t\t\t\t\t\t\t\t\t\t\t(88% of 1,567)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#app_reviews_hash"
+      },
+      {
+        "text": "Recent Reviews:\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\tRecent:\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tMostly Positive\n\t\t\t\t\t\t\t\t\t\t\t\t(79% of 24)",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#app_reviews_hash"
+      },
+      {
+        "text": "Sign in",
+        "url": "https://store.steampowered.com/login/?redir=app%2F1196630&snr=1_5_9_"
+      },
+      {
+        "text": "Single-player",
+        "url": "https://store.steampowered.com/search/?category2=2&snr=1_5_9__423"
+      },
+      {
+        "text": "Steam Achievements",
+        "url": "https://store.steampowered.com/search/?category2=22&snr=1_5_9__423"
+      },
+      {
+        "text": "Steam Cloud",
+        "url": "https://store.steampowered.com/search/?category2=23&snr=1_5_9__423"
+      },
+      {
+        "text": "Family Sharing",
+        "url": "https://store.steampowered.com/search/?category2=62&snr=1_5_9__423"
+      },
+      {
+        "text": "Xbox Controllers",
+        "url": "https://store.steampowered.com/search/?controllersupport=18"
+      },
+      {
+        "text": "See all 8 supported languages",
+        "url": ""
+      },
+      {
+        "text": "Learn more",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#"
+      },
+      {
+        "text": "Steam Achievements - View all 56",
+        "url": "https://steamcommunity.com/stats/1196630/achievements/"
+      },
+      {
+        "text": "Steam AchievementsView all 56+56",
+        "url": "https://steamcommunity.com/stats/1196630/achievements/"
+      },
+      {
+        "text": "Action",
+        "url": "https://store.steampowered.com/genre/Action/?snr=1_5_9__408"
+      },
+      {
+        "text": "Adventure",
+        "url": "https://store.steampowered.com/genre/Adventure/?snr=1_5_9__408"
+      },
+      {
+        "text": "Casual",
+        "url": "https://store.steampowered.com/genre/Casual/?snr=1_5_9__408"
+      },
+      {
+        "text": "Indie",
+        "url": "https://store.steampowered.com/genre/Indie/?snr=1_5_9__408"
+      },
+      {
+        "text": "RPG",
+        "url": "https://store.steampowered.com/genre/RPG/?snr=1_5_9__408"
+      },
+      {
+        "text": "Simulation",
+        "url": "https://store.steampowered.com/genre/Simulation/?snr=1_5_9__408"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?developer=VEWO%20Interactive%20Inc.&snr=1_5_9__408"
+      },
+      {
+        "text": "PQube",
+        "url": "https://store.steampowered.com/search/?publisher=PQube&snr=1_5_9__422"
+      },
+      {
+        "text": "VEWO Interactive Inc.",
+        "url": "https://store.steampowered.com/search/?publisher=VEWO%20Interactive%20Inc.&snr=1_5_9__422"
+      },
+      {
+        "text": "Nexomon",
+        "url": "https://store.steampowered.com/search/?franchise=Nexomon&snr=1_5_9__408"
+      },
+      {
+        "text": "Visit the website",
+        "url": "https://steamcommunity.com/linkfilter/?u=http%3A%2F%2Fwww.nexomon.com"
+      },
+      {
+        "text": "Facebook",
+        "url": "https://steamcommunity.com/linkfilter/?u=https%3A%2F%2Fwww.facebook.com%2FNexomonGame%2F"
+      },
+      {
+        "text": "X",
+        "url": "https://steamcommunity.com/linkfilter/?u=https%3A%2F%2Fx.com%2FNexomonGame"
+      },
+      {
+        "text": "YouTube",
+        "url": "https://www.youtube.com/nexomonofficial/"
+      },
+      {
+        "text": "Discord",
+        "url": "https://steamcommunity.com/linkfilter/?u=https%3A%2F%2Fdiscord.com%2Finvite%2FnnZueaM%3Fproof%3De1303acffbd71557"
+      },
+      {
+        "text": "View update history",
+        "url": "https://store.steampowered.com/newshub/?appids=1196630&snr=1_5_9__408"
+      },
+      {
+        "text": "Read related news",
+        "url": "https://store.steampowered.com/newshub/app/1196630?snr=1_5_9__408"
+      },
+      {
+        "text": "View discussions",
+        "url": "https://steamcommunity.com/app/1196630/discussions/"
+      },
+      {
+        "text": "Find Community Groups",
+        "url": "https://steamcommunity.com/actions/Search?T=ClanAccount&K=Nexomon%3A%20Extinction"
+      },
+      {
+        "text": "Embed",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#"
+      },
+      {
+        "text": "Add to Cart",
+        "url": "javascript:addToCart(412326);"
+      },
+      {
+        "text": "See All",
+        "url": "https://store.steampowered.com/recommended/morelike/app/1196630/?snr=1_5_9__300"
+      },
+      {
+        "text": "-30%$29.99$20.99",
+        "url": "https://store.steampowered.com/app/1623730/Palworld?snr=1_5_9__300"
+      },
+      {
+        "text": "$29.99",
+        "url": "https://store.steampowered.com/app/1912410/Minecraft_Dungeons_II?snr=1_5_9__300"
+      },
+      {
+        "text": "$7.99",
+        "url": "https://store.steampowered.com/app/3949040/RV_There_Yet?snr=1_5_9__300"
+      },
+      {
+        "text": "-20%$59.99$47.99",
+        "url": "https://store.steampowered.com/app/1903340/Clair_Obscur_Expedition_33?snr=1_5_9__300"
+      },
+      {
+        "text": "$39.99",
+        "url": "https://store.steampowered.com/app/3935020/Backyard_Baseball?snr=1_5_9__300"
+      },
+      {
+        "text": "-50%$19.99$9.99",
+        "url": "https://store.steampowered.com/app/1868140/DAVE_THE_DIVER?snr=1_5_9__300"
+      },
+      {
+        "text": "$14.99",
+        "url": "https://store.steampowered.com/app/2198150/Tiny_Glade?snr=1_5_9__300"
+      },
+      {
+        "text": "-36%$44.98$28.78",
+        "url": "https://store.steampowered.com/app/1657630/Slime_Rancher_2?snr=1_5_9__300"
+      },
+      {
+        "text": "View all",
+        "url": "https://store.steampowered.com/curators/curatorsreviewing/?appid=1196630&snr=1_5_9__top-curators"
+      },
+      {
+        "text": "here",
+        "url": "https://store.steampowered.com/curators/curatorsreviewing/?appid=1196630&snr=1_5_9__top-curators"
+      },
+      {
+        "text": "See language breakdown",
+        "url": "https://store.steampowered.com/app/1196630/Nexomon_Extinction/#"
+      },
+      {
+        "text": "About user reviews",
+        "url": "https://help.steampowered.com/faqs/view/2DA6-9CB3-F84A-643E"
+      },
+      {
+        "text": "Your preferences",
+        "url": "https://store.steampowered.com/account/preferences/#review_score_preferences"
+      }
+    ],
+    "screenshot": "screenshots/references/nexomon-steam.png"
+  }
+]

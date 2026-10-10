@@ -1,0 +1,6 @@
+{
+	"devDependencies": {
+		"lighthouse": "^13.5.0",
+		"@axe-core/playwright": "^4.13.0"
+	}
+}

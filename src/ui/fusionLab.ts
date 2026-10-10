@@ -26,7 +26,7 @@ export function openFusionLab(ctx: FusionCtx) {
   const sel: number[] = []; // selected party indices, in order (A then B)
 
   const root = document.createElement("div");
-  root.className = "summon";
+  root.className = "summon fusion";
   const close = () => {
     cancelled = true;
     root.remove();
@@ -40,7 +40,7 @@ export function openFusionLab(ctx: FusionCtx) {
     if (ctx.party.length < 2) {
       root.innerHTML = `
         <div class="summon-panel">
-          <div class="summon-head"><h2>🌀 Wellspring Fusion</h2><button class="summon-close" aria-label="Close">✕</button></div>
+          <div class="summon-head"><h2>Wellspring Fusion</h2><button class="summon-close" aria-label="Close">✕</button></div>
           <p class="summon-sub">You need at least two critters to fuse. Catch or summon another first.</p>
         </div>`;
       root.querySelector(".summon-close")!.addEventListener("click", close);
@@ -49,14 +49,14 @@ export function openFusionLab(ctx: FusionCtx) {
     const canFuse = sel.length === 2 && ctx.wallet.balance() >= ctx.cost;
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-head"><h2>🌀 Wellspring Fusion</h2><span class="shop-sprigs">🌱 ${ctx.wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
+        <div class="summon-head"><h2>Wellspring Fusion</h2><span class="shop-sprigs">🌱 ${ctx.wallet.balance()}</span><button class="summon-close" aria-label="Close">✕</button></div>
         <p class="summon-sub">Choose two critters. The Wellspring will merge them into one new hybrid. <strong>The two originals are consumed.</strong></p>
         <div class="fusion-grid">
           ${ctx.party
             .map((m, i) => {
               const pick = sel.indexOf(i);
               const tag = pick === 0 ? "A" : pick === 1 ? "B" : "";
-              return `<button class="fusion-cell${pick >= 0 ? " on" : ""}" data-i="${i}" style="--c:${m.species.color}">
+              return `<button class="fusion-cell${pick >= 0 ? " on" : ""}" data-i="${i}" aria-pressed="${pick >= 0}" style="--c:${m.species.color}">
                   ${tag ? `<span class="fusion-tag">${tag}</span>` : ""}
                   <img src="${spriteUrl(m.species.id)}" alt="">
                   <span>${m.species.name} <small>Lv${m.level}</small></span>
@@ -64,6 +64,7 @@ export function openFusionLab(ctx: FusionCtx) {
             })
             .join("")}
         </div>
+        <p class="fusion-selection" role="status">${sel.length} / 2 parents selected · Cost: ${ctx.cost} Sprigs</p>
         <div class="summon-actions">
           <button class="summon-go" data-act="fuse"${canFuse ? "" : " disabled"}>Fuse 🌱${ctx.cost}</button>
         </div>
@@ -91,11 +92,13 @@ export function openFusionLab(ctx: FusionCtx) {
   const renderLoading = () => {
     root.innerHTML = `
       <div class="summon-panel">
-        <div class="summon-loading">
+        <div class="summon-head"><h2>Weaving a hybrid</h2><button class="summon-close" aria-label="Cancel and close fusion">✕</button></div>
+        <div class="summon-loading" role="status">
           <div class="summon-orb" style="--c:#a66bff"></div>
           <p class="summon-status">${STATUS_LINES[0]}</p>
         </div>
       </div>`;
+    root.querySelector(".summon-close")!.addEventListener("click", close);
     let i = 0;
     const statusEl = root.querySelector(".summon-status") as HTMLElement;
     const timer = setInterval(() => {

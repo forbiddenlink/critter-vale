@@ -1,0 +1,16 @@
+{
+  "passed": [
+    "Choose Aqua starter; starter kit and local save created",
+    "Reload restores party without starter screen",
+    "Enter home from world; rest/heal/save; leave",
+    "Enter Trading Post from world; purchase inventory; leave",
+    "Enter lab; open/close summon and fusion empty state",
+    "Wild encounter; ball capture; party/Dex/reward/save update",
+    "Collection reflects newly caught creature",
+    "Wild run returns to overworld",
+    "Champion remains gated before three crests",
+    "Three-crest fixture unlocks Champion; win, victory, continue and save"
+  ],
+  "errors": [],
+  "fixtures": "Position placement, deterministic catch RNG, three crests and high-level Champion team are isolated fixtures; every UI action is clicked/typed."
+}

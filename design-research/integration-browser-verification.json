@@ -1,0 +1,365 @@
+{
+  "results": [
+    {
+      "device": "desktop",
+      "name": "title",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "overworld",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "guide",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "dex",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "dex-empty",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "dex-caught",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "shop",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "shop-purchased",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "home",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "lab",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "summon-full-party",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "summon-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "summon-loading",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "summon-server-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "summon-preview",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion-empty",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion-selected",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion-loading",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "fusion-preview",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "dialog",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle-bag",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle-revive",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle-switch",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle-result",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "battle-trainer",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "faint",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "desktop",
+      "name": "victory",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "title",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "overworld",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "guide",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "dex",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "dex-empty",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "dex-caught",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "shop",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "shop-purchased",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "home",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "lab",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "summon-full-party",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "summon-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "summon-loading",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "summon-server-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "summon-preview",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion-empty",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion-selected",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion-loading",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion-error",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "fusion-preview",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "dialog",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle-bag",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle-revive",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle-switch",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle-result",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "battle-trainer",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "faint",
+      "violations": [],
+      "horizontalOverflow": false
+    },
+    {
+      "device": "mobile",
+      "name": "victory",
+      "violations": [],
+      "horizontalOverflow": false
+    }
+  ],
+  "errors": []
+}
