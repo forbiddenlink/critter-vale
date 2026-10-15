@@ -22,7 +22,7 @@ import { registerCustom, cacheCustomSprite } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
 import type { Bag, ItemId } from "./game/items";
-import { sfx, startMusic, toggleMusic } from "./audio";
+import { sfx, startMusic, toggleMusic, installUiSounds } from "./audio";
 import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 import { quirkDef } from "./game/traits";
@@ -168,6 +168,7 @@ mute.addEventListener("click", () => {
   mute.setAttribute("aria-pressed", String(enabled));
 });
 document.body.appendChild(mute);
+installUiSounds();
 function drawHud() {
   if (!team.length) return;
   const objective = isChampion ? "Champion of the Vale. Keep discovering." : crests.size === 3 ? "Challenge Champion Sol at the Wellspring." : caughtIds.size < 2 ? "Find your next partner in the tall grass." : `Earn the Warden crests · ${crests.size} / 3`;
@@ -437,7 +438,7 @@ function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
   drawHud();
   persist();
   showToast(`🌀 ${spec.name} was born from the Wellspring!`);
-  sfx("levelup");
+  sfx("summon-shimmer");
 }
 
 function onSummoned(spec: CustomSpecies) {
@@ -452,7 +453,7 @@ function onSummoned(spec: CustomSpecies) {
   drawHud();
   persist();
   showToast(joinsParty ? `${spec.name} joined your party!` : `${spec.name} was kept in your Critter-Dex. Your party is full.`);
-  sfx("levelup");
+  sfx("summon-shimmer");
 }
 
 function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: number }) {

@@ -15,7 +15,7 @@ import { switchOptions, reviveOptions, faintFoe, awardBattleXp } from "../game/b
 import { ITEMS, consume, bagCount } from "../game/items";
 import type { Bag, ItemId } from "../game/items";
 import { quirkDef } from "../game/traits";
-import { sfx } from "../audio";
+import { sfx, hitSfxFor, setMusicContext } from "../audio";
 
 export type BattleOutcome = "caught" | "won" | "lost" | "ran";
 
@@ -55,6 +55,7 @@ export function runBattle(
   opts: BattleOpts = {}
 ) {
   const isTrainer = !!opts.trainerName;
+  setMusicContext("battle");
   const bag: Bag = opts.bag ?? {};
   const restrict = opts.restrict ?? {};
   let active = party.find((m) => m.hp > 0) ?? party[0];
@@ -175,11 +176,11 @@ export function runBattle(
     el("." + side).appendChild(n);
     setTimeout(() => n.remove(), 950);
   };
-  const strike = (side: "foe" | "ally", monId: string, dmg: number) => {
+  const strike = (side: "foe" | "ally", monId: string, dmg: number, element: Move["element"]) => {
     flash(monId);
     popDamage(side, dmg);
     shake();
-    sfx("hit");
+    sfx(hitSfxFor(element));
   };
   const effLabel = (mult: number) =>
     mult > 1 ? " It's super effective!" : mult < 1 ? " It's not very effective..." : "";
@@ -219,6 +220,7 @@ export function runBattle(
     setTimeout(
       () => {
         root.remove();
+        setMusicContext("field");
         onEnd(outcome, caught);
       },
       outcome === "lost" || outcome === "caught" || (outcome === "won" && isTrainer) ? 1600 : 1000
@@ -323,7 +325,7 @@ export function runBattle(
     const { dmg, recoil } = adjustDamage(foe, active, moveDamage(foe, active, move));
     const mult = elementMultiplier(move.element, active.species.element);
     active.hp = Math.max(0, active.hp - dmg);
-    strike("ally", "allyMon", dmg);
+    strike("ally", "allyMon", dmg, move.element);
     if (recoil > 0 && foe.hp > 0) foe.hp = Math.max(0, foe.hp - recoil); // thornskin bites back
     endTurnHeal(foe);
     drawHp();
@@ -344,7 +346,7 @@ export function runBattle(
     const { dmg, recoil } = adjustDamage(active, foe, moveDamage(active, foe, move));
     const mult = elementMultiplier(move.element, foe.species.element);
     foe.hp = Math.max(0, foe.hp - dmg);
-    strike("foe", "foeMon", dmg);
+    strike("foe", "foeMon", dmg, move.element);
     log(`${active.species.name} used ${move.name}!${effLabel(mult)}`);
     if (recoil > 0 && active.hp > 0) active.hp = Math.max(0, active.hp - recoil); // foe's thornskin
     endTurnHeal(active);
