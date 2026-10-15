@@ -1,7 +1,7 @@
 // One-off build script: generates the audio pack with Magica, downloads every asset into
 // public/audio/ (CDN URLs are never stored) and transcodes with ffmpeg.
 // Usage: MAGICA_KEY=... node scripts/generate-audio.mjs [name ...]   (needs ffmpeg on PATH)
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -21,7 +21,7 @@ const PACK = {
   "hit-aqua": sfx("short watery splash impact hit, bubbly water burst, retro RPG battle attack, no music", 1),
   "hit-leaf": sfx("short leafy slash impact hit, rustling whip of leaves, retro RPG battle attack, no music", 1),
   "hit-normal": sfx("short punchy physical thump hit, simple tackle impact, retro RPG battle attack, no music", 1),
-  "ui-click": sfx("soft crisp UI button click, tiny wooden tick, game menu, no music", 1),
+  "ui-click": sfx("single soft wooden UI tap, dry, no reverb, 0.1 seconds, no music", 1),
   "ui-confirm": sfx("bright cheerful UI confirm chime, two quick rising notes, game menu, no music", 1),
   "ui-cancel": sfx("soft low UI cancel back blip, two quick falling notes, game menu, no music", 1),
   "summon-shimmer": sfx("magical shimmering sparkle swell, glittering chimes rising, mystical creature summoning, no music", 3),
@@ -45,6 +45,42 @@ async function run(model, input) {
   throw new Error("timeout");
 }
 
+const probeDuration = (f) =>
+  Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString());
+
+const START_TRIM = "silenceremove=start_periods=1:start_threshold=-45dB";
+
+/** Per-sound clean-up chain (applied before normalisation). */
+function chainFor(name, tmpWav) {
+  if (name.startsWith("ui-")) {
+    // UI sounds are one short transient: drop leading silence, keep <=250ms, 15ms fade-out.
+    return [START_TRIM, "atrim=0:0.25", "afade=t=out:st=0.235:d=0.015"];
+  }
+  const chain = [START_TRIM];
+  if (name === "hit-ember" || name === "summon-shimmer") chain.push("highshelf=f=6000:g=-4");
+  if (name === "summon-shimmer") {
+    const d = probeDuration(tmpWav);
+    chain.push(`afade=t=out:st=${Math.max(0, d - 0.15).toFixed(3)}:d=0.15`);
+  }
+  return chain;
+}
+
+function encodeSfx(name, raw, dest) {
+  const full = join(TMP, `${name}.full.wav`);
+  const cut = join(TMP, `${name}.cut.wav`);
+  const run = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...args]);
+  run(["-i", raw, "-ac", "1", "-ar", "22050", full]); // untrimmed: durations are measured from this
+  run(["-i", full, "-af", chainFor(name, full).join(","), cut]);
+  const src = probeDuration(cut) < 0.05 ? full : cut; // trimming ate a very quiet blip: keep it whole
+  // Peak-normalise to -3dBFS so no effect jumps out.
+  const vd = spawnSync("ffmpeg", ["-hide_banner", "-i", src, "-af", "volumedetect", "-f", "null", "-"], { encoding: "utf8" });
+  const peak = Number(/max_volume: (-?[\d.]+) dB/.exec(vd.stderr)?.[1]);
+  const gain = Number.isFinite(peak) ? -3 - peak : 0;
+  run(["-i", src, "-af", `volume=${gain.toFixed(2)}dB`, "-b:a", "64k", dest]);
+  rmSync(full);
+  rmSync(cut);
+}
+
 const wanted = process.argv.slice(2);
 let credits = 0;
 for (const [name, spec] of Object.entries(PACK)) {
@@ -55,18 +91,13 @@ for (const [name, spec] of Object.entries(PACK)) {
   if (!url) throw new Error(`no output for ${name}`);
   const raw = join(TMP, `${name}.bin`);
   writeFileSync(raw, Buffer.from(await (await fetch(url)).arrayBuffer()));
-  const dest = join(OUT, `${name}.mp3`);
-  // SFX: mono 22.05kHz 64k keeps each well under 60KB. Music: trimmed to 100s with a 3s fade and
-  // 80k stereo so each loop stays under 1.2MB (lyria returns ~3 minute tracks).
-  const sfxArgs = ["-ac", "1", "-ar", "22050", "-b:a", "64k"];
-  const trim = ["-af", "silenceremove=start_periods=1:start_threshold=-50dB"];
-  const musicArgs = ["-t", "100", "-af", "afade=t=out:st=97:d=3", "-ac", "2", "-ar", "44100", "-b:a", "80k"];
-  const ff = (extra) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, ...extra, dest]);
-  if (spec.kind === "music") ff(musicArgs);
-  else {
-    ff([...sfxArgs, ...trim]);
-    // silenceremove can eat a very quiet blip entirely; fall back to the untrimmed encode.
-    if (statSync(dest).size < 1024) ff(sfxArgs);
+  const dest = join(OUT, `${name}.${spec.kind === "music" ? "m4a" : "mp3"}`);
+  // Music: full-length AAC 64k stereo (~1.4MB for 3 minutes); src/audio.ts crossfades the tail into
+  // the head at runtime for a gapless loop. SFX: cleaned up, peak-normalised to -3dBFS, mono mp3.
+  if (spec.kind === "music") {
+    execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "64k", dest]);
+  } else {
+    encodeSfx(name, raw, dest);
   }
   rmSync(raw);
   if (!existsSync(dest)) throw new Error(`transcode failed: ${name}`);

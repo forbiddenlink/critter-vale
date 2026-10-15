@@ -48,8 +48,8 @@ export function hitSfxFor(element: GameElement): SfxName {
 export type MusicContext = "field" | "battle";
 
 const MUSIC_SRC: Record<MusicContext, string> = {
-  field: "/audio/bgm-town.mp3",
-  battle: "/audio/bgm-battle.mp3",
+  field: "/audio/bgm-town.m4a",
+  battle: "/audio/bgm-battle.m4a",
 };
 /** The original single track, kept as the fallback if a themed loop is missing. */
 const FALLBACK_MUSIC = "/audio/bgm.mp3";
@@ -112,11 +112,99 @@ function loadTrack(sources: string[]): HTMLAudioElement {
   return a;
 }
 
+/**
+ * Gapless loop buffer: equal-power crossfade of the last `fadeSec` into the first `fadeSec`, then
+ * drop the tail so the end flows straight into the start. Returns new channel arrays of length
+ * `length - fade`. Pure, so it is unit-tested.
+ */
+export function crossfadeLoop(channels: Float32Array[], sampleRate: number, fadeSec: number): Float32Array[] {
+  return channels.map((ch) => {
+    const n = Math.min(Math.floor(fadeSec * sampleRate), Math.floor(ch.length / 2));
+    const out = ch.slice(0, ch.length - n);
+    for (let i = 0; i < n; i++) {
+      const t = ((i + 0.5) / n) * (Math.PI / 2);
+      out[i] = ch[i] * Math.sin(t) + ch[ch.length - n + i] * Math.cos(t);
+    }
+    return out;
+  });
+}
+
+const LOOP_FADE_SEC = 3;
+let audioCtx: AudioContext | null = null;
+let webGain: GainNode | null = null;
+let webSource: AudioBufferSourceNode | null = null;
+let webToken = 0;
+const loopBuffers: Partial<Record<MusicContext, Promise<AudioBuffer>>> = {};
+
+function loadLoop(ctx: AudioContext, c: MusicContext): Promise<AudioBuffer> {
+  return (loopBuffers[c] ??= fetch(MUSIC_SRC[c])
+    .then((r) => {
+      if (!r.ok) throw new Error(`music ${r.status}`);
+      return r.arrayBuffer();
+    })
+    .then((bytes) => ctx.decodeAudioData(bytes))
+    .then((buf) => {
+      const chans = Array.from({ length: buf.numberOfChannels }, (_, i) => buf.getChannelData(i));
+      const looped = crossfadeLoop(chans, buf.sampleRate, LOOP_FADE_SEC);
+      const out = ctx.createBuffer(looped.length, looped[0].length, buf.sampleRate);
+      looped.forEach((d, i) => out.copyToChannel(d as Float32Array<ArrayBuffer>, i));
+      return out;
+    })
+    .catch((e) => {
+      delete loopBuffers[c]; // allow a retry later
+      throw e;
+    }));
+}
+
+function stopWeb() {
+  webToken++;
+  try {
+    webSource?.stop();
+  } catch {
+    /* already stopped */
+  }
+  webSource = null;
+}
+
+/** WebAudio looping playback. Resolves false when unsupported or the file cannot be decoded. */
+async function playWeb(c: MusicContext): Promise<boolean> {
+  const Ctor: typeof AudioContext | undefined =
+    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return false;
+  try {
+    if (!audioCtx) {
+      audioCtx = new Ctor();
+      webGain = audioCtx.createGain();
+      webGain.gain.value = MUSIC_VOLUME;
+      webGain.connect(audioCtx.destination);
+    }
+    stopWeb();
+    const token = webToken;
+    const buf = await loadLoop(audioCtx, c);
+    if (token !== webToken || !enabled || context !== c) return true; // superseded or muted meanwhile
+    await audioCtx.resume();
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(webGain!);
+    src.start();
+    webSource = src;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Starts (or restarts) the track for the current context if sound is on. */
 function playCurrent() {
-  if (!started || !enabled || !music) return;
-  void music.play().catch(() => {
-    // autoplay blocked: allow the next gesture to try again
-    started = false;
+  if (!started || !enabled) return;
+  void playWeb(context).then((ok) => {
+    if (ok) return;
+    // WebAudio unavailable or decode failed: plain HTMLAudio, which can also fall back to bgm.mp3
+    music = trackFor(context);
+    void music.play().catch(() => {
+      started = false; // autoplay blocked: allow the next gesture to try again
+    });
   });
 }
 
@@ -126,9 +214,13 @@ function trackFor(ctx: MusicContext): HTMLAudioElement {
   return (tracks[ctx] ??= loadTrack(musicSources(ctx)));
 }
 
+function pauseAllMusic() {
+  stopWeb();
+  music?.pause();
+}
+
 export function startMusic() {
   started = true;
-  music = trackFor(context);
   playCurrent();
 }
 
@@ -136,10 +228,9 @@ export function startMusic() {
 export function setMusicContext(next: MusicContext) {
   if (next === context) return;
   context = next;
-  if (!music) return; // startMusic() hasn't run yet; it will pick up the context
-  music.pause();
-  music = trackFor(next);
-  music.currentTime = 0;
+  if (!started) return; // startMusic() hasn't run yet; it will pick up the context
+  pauseAllMusic();
+  if (music) music.currentTime = 0;
   playCurrent();
 }
 
@@ -151,7 +242,7 @@ export function toggleMusic(): boolean {
   }
   enabled = !enabled;
   if (enabled) playCurrent();
-  else music?.pause();
+  else pauseAllMusic();
   return enabled;
 }
 
