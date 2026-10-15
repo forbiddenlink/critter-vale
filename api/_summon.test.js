@@ -67,4 +67,28 @@ describe("api/summon handler", () => {
     }
     expect(codes).toEqual([200, 200, 200, 503]);
   });
+
+  it("fails closed with 503 (no paid run) when Redis is configured but erroring", async () => {
+    process.env.KV_REST_API_URL = "https://redis.test";
+    process.env.KV_REST_API_TOKEN = "t";
+    const boom = async () => {
+      throw new Error("redis down");
+    };
+    vi.resetModules();
+    vi.doMock("@upstash/redis", () => ({ Redis: class { incr = boom; expire = boom; set = boom; } }));
+    vi.doMock("@upstash/ratelimit", () => ({
+      Ratelimit: class {
+        static slidingWindow() {
+          return {};
+        }
+        limit = boom;
+      },
+    }));
+    const h = (await import("./summon.js")).default;
+    const r = await call(h, { body: { op: "gen", description: "a fox", element: "Ember" } });
+    expect(r.code).toBe(503);
+    expect(started).toEqual([]);
+    vi.doUnmock("@upstash/redis");
+    vi.doUnmock("@upstash/ratelimit");
+  });
 });

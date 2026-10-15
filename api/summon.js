@@ -10,7 +10,7 @@
 //
 // status is "pending" | "done" | "failed"; result is the Magica output URL array.
 
-import { RUN_ID, sameOrigin, selectGuard } from "./_guard.js";
+import { GuardUnavailableError, RUN_ID, sameOrigin, selectGuard } from "./_guard.js";
 
 const BASE = "https://api.magica.com/api/v1";
 const DONE_EXCLUDES = new Set(["RUNNING", "PENDING", "QUEUED"]);
@@ -153,6 +153,11 @@ export default async function handler(req, res) {
 
     res.status(405).json({ error: "method not allowed" });
   } catch (err) {
+    if (err instanceof GuardUnavailableError) {
+      guardPromise = undefined; // retry setup on the next request
+      res.status(503).json({ error: "The Wellspring is resting. Try again in a moment." });
+      return;
+    }
     res.status(502).json({ error: "The summoning failed. Try again." });
   }
 }

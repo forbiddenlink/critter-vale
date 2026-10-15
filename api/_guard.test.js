@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createGuard, createRedisGuard, redisEnv, selectGuard, sameOrigin } from "./_guard.js";
+import { createGuard, createRedisGuard, GuardUnavailableError, redisEnv, selectGuard, sameOrigin } from "./_guard.js";
 
 describe("createGuard", () => {
   it("throttles an IP after the per-minute limit and frees it a minute later", () => {
@@ -107,21 +107,14 @@ describe("createRedisGuard", () => {
     expect(redis.ttl.get("cv:genrun:run-1")).toBe(86400);
   });
 
-  it("falls back to the in-memory guard when Redis errors", async () => {
+  it("fails closed (throws) when Redis errors", async () => {
     const boom = async () => {
       throw new Error("down");
     };
-    const g = createRedisGuard({
-      redis: { incr: boom, expire: boom, set: boom },
-      limiter: { limit: boom },
-      fallback: createGuard({ perMinute: 1, dailyCap: 1 }),
-    });
-    expect(await g.throttled("a")).toBe(false);
-    expect(await g.throttled("a")).toBe(true);
-    expect(await g.takeBudget()).toBe(true);
-    expect(await g.takeBudget()).toBe(false);
-    expect(await g.claimGenRun("r")).toBe(true);
-    expect(await g.claimGenRun("r")).toBe(false);
+    const g = createRedisGuard({ redis: { incr: boom, expire: boom, set: boom }, limiter: { limit: boom } });
+    await expect(g.throttled("a")).rejects.toBeInstanceOf(GuardUnavailableError);
+    await expect(g.takeBudget()).rejects.toBeInstanceOf(GuardUnavailableError);
+    await expect(g.claimGenRun("r")).rejects.toBeInstanceOf(GuardUnavailableError);
   });
 });
 
@@ -154,11 +147,12 @@ describe("selectGuard", () => {
     expect((await selectGuard({ KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" }, { loadDeps })).kind).toBe("redis");
   });
 
-  it("falls back to memory if the Redis packages fail to load", async () => {
-    const g = await selectGuard(
-      { KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" },
-      { loadDeps: async () => { throw new Error("missing"); } }
-    );
-    expect(g.kind).toBe("memory");
+  it("fails closed if credentials are set but the Redis packages fail to load", async () => {
+    await expect(
+      selectGuard(
+        { KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" },
+        { loadDeps: async () => { throw new Error("missing"); } }
+      )
+    ).rejects.toBeInstanceOf(GuardUnavailableError);
   });
 });
