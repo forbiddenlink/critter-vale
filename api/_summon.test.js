@@ -14,6 +14,7 @@ describe("api/summon handler", () => {
     vi.resetModules();
     process.env.MAGICA_KEY = "test-key";
     process.env.SUMMON_DAILY_CAP = "3";
+    for (const k of ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN"]) delete process.env[k]; // in-memory path
     started = [];
     vi.stubGlobal("fetch", async (url, init) => {
       if (url.endsWith("/run")) {
