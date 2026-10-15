@@ -4,15 +4,26 @@ import { SPECIES } from "./critters";
 import type { Species, Element } from "./critters";
 import { MOVESETS } from "./battle";
 import type { Move, Critter } from "./battle";
+import { idbStore, loadOrCache, pickSpriteSource } from "./spriteCache";
 
-// --- sprite URL resolver (custom critters load from a remote URL, not /sprites) ---
+// --- sprite URL resolver (custom critters load from IndexedDB, then a remote URL, not /sprites) ---
 const spriteUrls = new Map<string, string>();
+const cachedObjectUrls = new Map<string, string>();
 export function registerSpriteUrl(id: string, url: string) {
   spriteUrls.set(id, url);
 }
-/** Sprite source for a species id: a registered custom URL, else the bundled PNG. */
+/** Sprite source for a species id: cached bytes, else the registered remote URL, else the bundled PNG. */
 export function spriteUrl(id: string): string {
-  return spriteUrls.get(id) ?? `/sprites/${id}.png`;
+  return pickSpriteSource(id, cachedObjectUrls.get(id), spriteUrls.get(id));
+}
+
+/** Copy a summoned critter's image into IndexedDB and serve it from there. Safe to call on every
+ *  load: it reads the store first, only fetches when missing, and never throws. */
+export async function cacheCustomSprite(c: Pick<CustomSpecies, "id" | "imageUrl">): Promise<void> {
+  if (typeof indexedDB === "undefined" || typeof fetch === "undefined") return;
+  const blob = await loadOrCache(c.id, c.imageUrl, { store: idbStore, fetchImpl: fetch.bind(globalThis) });
+  if (!blob || cachedObjectUrls.has(c.id)) return;
+  cachedObjectUrls.set(c.id, URL.createObjectURL(blob));
 }
 
 export interface CustomSpecies {

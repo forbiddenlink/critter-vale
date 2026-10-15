@@ -18,7 +18,7 @@ import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
 import { openSummonLab } from "./ui/summonLab";
 import { openFusionLab } from "./ui/fusionLab";
-import { registerCustom } from "./game/customSpecies";
+import { registerCustom, cacheCustomSprite } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
 import type { Bag, ItemId } from "./game/items";
@@ -423,6 +423,7 @@ const wallet = {
 
 function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
   registerCustom(spec);
+  void cacheCustomSprite(spec); // keep the image bytes: the CDN URL may expire
   customOwned.push(spec);
   const level = Math.max(a.level, b.level);
   for (const parent of [a, b]) {
@@ -441,6 +442,7 @@ function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
 
 function onSummoned(spec: CustomSpecies) {
   registerCustom(spec); // add to SPECIES / MOVESETS / sprite registry so the game can use it
+  void cacheCustomSprite(spec); // keep the image bytes: the CDN URL may expire
   customOwned.push(spec);
   seen.add(spec.id);
   caughtIds.add(spec.id);
@@ -748,6 +750,10 @@ function resetInMemoryState() {
 
 const saved = readSave();
 if (saved.status === "ok") {
+  // Older saves only hold a remote URL: lazily copy any still-reachable image into IndexedDB.
+  // Wait briefly so cached sprites are in place before the first render, but never block boot.
+  const hydrating = Promise.all((saved.data.custom ?? []).map(cacheCustomSprite));
+  await Promise.race([hydrating, new Promise((r) => setTimeout(r, 1500))]);
   try {
     resumeFromSave(saved.data);
   } catch (err) {
