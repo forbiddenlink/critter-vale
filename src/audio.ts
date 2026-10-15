@@ -82,6 +82,7 @@ let context: MusicContext = "field";
 let music: HTMLAudioElement | null = null;
 
 export function sfx(name: SfxName) {
+  if (!enabled) return; // the Sound toggle mutes every effect, not just music
   const p = pool(name);
   const a = p.find((x) => x.paused || x.ended) ?? p[0];
   try {
@@ -92,9 +93,8 @@ export function sfx(name: SfxName) {
   }
 }
 
-/** UI feedback sounds respect the Sound toggle, since they fire on every button press. */
 export function uiSfx(name: "ui-click" | "ui-confirm" | "ui-cancel") {
-  if (enabled) sfx(name);
+  sfx(name);
 }
 
 function loadTrack(sources: string[]): HTMLAudioElement {
