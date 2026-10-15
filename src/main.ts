@@ -18,11 +18,12 @@ import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
 import { openSummonLab } from "./ui/summonLab";
 import { openFusionLab } from "./ui/fusionLab";
-import { registerCustom } from "./game/customSpecies";
+import { registerCustom, cacheCustomSprite, pruneCustomSprites, spriteEvents } from "./game/customSpecies";
+import type { SpriteReadyDetail } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
 import type { Bag, ItemId } from "./game/items";
-import { sfx, startMusic, toggleMusic } from "./audio";
+import { sfx, startMusic, toggleMusic, installUiSounds, armMusicOnGesture } from "./audio";
 import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 import { quirkDef } from "./game/traits";
@@ -168,6 +169,7 @@ mute.addEventListener("click", () => {
   mute.setAttribute("aria-pressed", String(enabled));
 });
 document.body.appendChild(mute);
+installUiSounds();
 function drawHud() {
   if (!team.length) return;
   const objective = isChampion ? "Champion of the Vale. Keep discovering." : crests.size === 3 ? "Challenge Champion Sol at the Wellspring." : caughtIds.size < 2 ? "Find your next partner in the tall grass." : `Earn the Warden crests · ${crests.size} / 3`;
@@ -423,6 +425,7 @@ const wallet = {
 
 function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
   registerCustom(spec);
+  void cacheCustomSprite(spec); // keep the image bytes: the CDN URL may expire
   customOwned.push(spec);
   const level = Math.max(a.level, b.level);
   for (const parent of [a, b]) {
@@ -436,11 +439,12 @@ function onFused(a: Critter, b: Critter, spec: CustomSpecies) {
   drawHud();
   persist();
   showToast(`🌀 ${spec.name} was born from the Wellspring!`);
-  sfx("levelup");
+  sfx("summon-shimmer");
 }
 
 function onSummoned(spec: CustomSpecies) {
   registerCustom(spec); // add to SPECIES / MOVESETS / sprite registry so the game can use it
+  void cacheCustomSprite(spec); // keep the image bytes: the CDN URL may expire
   customOwned.push(spec);
   seen.add(spec.id);
   caughtIds.add(spec.id);
@@ -450,7 +454,7 @@ function onSummoned(spec: CustomSpecies) {
   drawHud();
   persist();
   showToast(joinsParty ? `${spec.name} joined your party!` : `${spec.name} was kept in your Critter-Dex. Your party is full.`);
-  sfx("levelup");
+  sfx("summon-shimmer");
 }
 
 function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: number }) {
@@ -587,13 +591,14 @@ reset.className = "mute reset";
 reset.textContent = "New game";
 reset.title = "New game (erases progress)";
 reset.setAttribute("aria-label", "New game (erases progress)");
-reset.addEventListener("click", () => {
+reset.addEventListener("click", async () => {
   if (confirm("Start a new game? This erases your saved progress.")) {
     // Empty in-memory state FIRST so the beforeunload persist() no-ops and
     // does not immediately re-write the save we are clearing.
     team.length = 0;
     caught.length = 0;
     clearSave();
+    await pruneCustomSprites([]); // drop cached summon images with the save they belonged to
     location.reload();
   }
 });
@@ -641,16 +646,6 @@ touchControls.querySelectorAll<HTMLButtonElement>("[data-key]").forEach((button:
 });
 touchControls.querySelector(".touch-interact")!.addEventListener("click", (): void => world.interact());
 document.body.appendChild(touchControls);
-
-function armMusicOnGesture() {
-  const start = () => {
-    startMusic();
-    window.removeEventListener("keydown", start);
-    window.removeEventListener("pointerdown", start);
-  };
-  window.addEventListener("keydown", start);
-  window.addEventListener("pointerdown", start);
-}
 
 function resumeFromSave(s: SaveData) {
   // Re-register summoned critters BEFORE rebuilding the team (team may reference their ids).
@@ -746,8 +741,22 @@ function resetInMemoryState() {
   isChampion = false;
 }
 
+// A cache that finishes after the boot timeout must still reach images already on screen.
+spriteEvents.addEventListener("sprite-ready", (e) => {
+  const { previous, next } = (e as CustomEvent<SpriteReadyDetail>).detail;
+  document.querySelectorAll<HTMLImageElement>("img").forEach((img) => {
+    if (img.getAttribute("src") === previous) img.src = next;
+  });
+});
+
 const saved = readSave();
 if (saved.status === "ok") {
+  // Older saves only hold a remote URL: lazily copy any still-reachable image into IndexedDB.
+  // Wait briefly so cached sprites are in place before the first render, but never block boot.
+  const hydrating = pruneCustomSprites((saved.data.custom ?? []).map((c) => c.id)).then(() =>
+    Promise.all((saved.data.custom ?? []).map(cacheCustomSprite))
+  );
+  await Promise.race([hydrating, new Promise((r) => setTimeout(r, 1500))]);
   try {
     resumeFromSave(saved.data);
   } catch (err) {

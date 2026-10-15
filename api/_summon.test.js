@@ -14,6 +14,7 @@ describe("api/summon handler", () => {
     vi.resetModules();
     process.env.MAGICA_KEY = "test-key";
     process.env.SUMMON_DAILY_CAP = "3";
+    for (const k of ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN"]) delete process.env[k]; // in-memory path
     started = [];
     vi.stubGlobal("fetch", async (url, init) => {
       if (url.endsWith("/run")) {
@@ -65,5 +66,41 @@ describe("api/summon handler", () => {
       codes.push(r.code);
     }
     expect(codes).toEqual([200, 200, 200, 503]);
+  });
+
+  it("fails closed with 503 (no paid run) when Redis is configured but erroring", async () => {
+    process.env.KV_REST_API_URL = "https://redis.test";
+    process.env.KV_REST_API_TOKEN = "t";
+    const boom = async () => {
+      throw new Error("redis down");
+    };
+    vi.resetModules();
+    vi.doMock("@upstash/redis", () => ({ Redis: class { incr = boom; expire = boom; set = boom; } }));
+    vi.doMock("@upstash/ratelimit", () => ({
+      Ratelimit: class {
+        static slidingWindow() {
+          return {};
+        }
+        limit = boom;
+      },
+    }));
+    const h = (await import("./summon.js")).default;
+    const r = await call(h, { body: { op: "gen", description: "a fox", element: "Ember" } });
+    expect(r.code).toBe(503);
+    expect(started).toEqual([]);
+    vi.doUnmock("@upstash/redis");
+    vi.doUnmock("@upstash/ratelimit");
+  });
+
+  it("returns 503 with zero paid calls when Redis config is only half set", async () => {
+    for (const k of ["UPSTASH_REDIS_REST_URL", "KV_REST_API_TOKEN"]) {
+      process.env[k] = "x";
+      vi.resetModules();
+      const h = (await import("./summon.js")).default;
+      const r = await call(h, { body: { op: "gen", description: "a fox", element: "Ember" } });
+      expect(r.code).toBe(503);
+      expect(started).toEqual([]);
+      delete process.env[k];
+    }
   });
 });

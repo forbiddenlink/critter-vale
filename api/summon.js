@@ -10,7 +10,7 @@
 //
 // status is "pending" | "done" | "failed"; result is the Magica output URL array.
 
-import { createGuard, RUN_ID, sameOrigin } from "./_guard.js";
+import { GuardUnavailableError, RUN_ID, sameOrigin, selectGuard } from "./_guard.js";
 
 const BASE = "https://api.magica.com/api/v1";
 const DONE_EXCLUDES = new Set(["RUNNING", "PENDING", "QUEUED"]);
@@ -23,10 +23,13 @@ const STYLE =
 
 // Paid runs are guarded by a per-IP throttle, a daily budget and a same-origin check, and
 // background removal only ever runs on an image this endpoint generated. See ./_guard.js.
-const guard = createGuard({
-  perMinute: 6,
-  dailyCap: Number(process.env.SUMMON_DAILY_CAP) || 50,
-});
+// With Upstash credentials in env the limits are shared across instances; otherwise per instance.
+let guardPromise;
+const getGuard = () =>
+  (guardPromise ??= selectGuard(process.env, {
+    perMinute: 6,
+    dailyCap: Number(process.env.SUMMON_DAILY_CAP) || 50,
+  }));
 
 function magicaHeaders(key) {
   return { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
@@ -83,8 +86,9 @@ export default async function handler(req, res) {
         res.status(403).json({ error: "forbidden" });
         return;
       }
+      const guard = await getGuard();
       const ip = (req.headers["x-forwarded-for"] || "").toString().split(",")[0].trim() || "anon";
-      if (guard.throttled(ip)) {
+      if (await guard.throttled(ip)) {
         res.status(429).json({ error: "Slow down a moment, then try summoning again." });
         return;
       }
@@ -100,7 +104,7 @@ export default async function handler(req, res) {
           res.status(400).json({ error: "Pick an element: Ember, Aqua, or Leaf." });
           return;
         }
-        if (!guard.takeBudget()) {
+        if (!(await guard.takeBudget())) {
           res.status(503).json({ error: "The Wellspring is resting for today. Try again tomorrow." });
           return;
         }
@@ -130,11 +134,11 @@ export default async function handler(req, res) {
           res.status(409).json({ error: "That summon has no finished image yet." });
           return;
         }
-        if (!guard.claimGenRun(genRunId)) {
+        if (!(await guard.claimGenRun(genRunId))) {
           res.status(409).json({ error: "That image was already cleaned up." });
           return;
         }
-        if (!guard.takeBudget()) {
+        if (!(await guard.takeBudget())) {
           res.status(503).json({ error: "The Wellspring is resting for today. Try again tomorrow." });
           return;
         }
@@ -149,6 +153,11 @@ export default async function handler(req, res) {
 
     res.status(405).json({ error: "method not allowed" });
   } catch (err) {
+    if (err instanceof GuardUnavailableError) {
+      guardPromise = undefined; // retry setup on the next request
+      res.status(503).json({ error: "The Wellspring is resting. Try again in a moment." });
+      return;
+    }
     res.status(502).json({ error: "The summoning failed. Try again." });
   }
 }
