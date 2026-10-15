@@ -25,6 +25,8 @@ export function pickSpriteSource(id: string, objectUrl?: string, remoteUrl?: str
 export interface SpriteStore {
   get(key: string): Promise<Blob | null>;
   put(key: string, blob: Blob): Promise<void>;
+  keys(): Promise<string[]>;
+  remove(key: string): Promise<void>;
 }
 
 export interface CacheDeps {
@@ -71,23 +73,54 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+/**
+ * Runs one request in its own transaction and settles only on a terminal transaction event, closing
+ * the connection on every path (complete, abort, error) so a failed write rejects instead of hanging.
+ */
+async function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const db = await openDb();
+  return new Promise<T>((resolve, reject) => {
+    let result: T;
+    let tx: IDBTransaction;
+    try {
+      tx = db.transaction(STORE, mode);
+      const req = run(tx.objectStore(STORE));
+      req.onsuccess = () => {
+        result = req.result;
+      };
+    } catch (e) {
+      db.close();
+      reject(e);
+      return;
+    }
+    tx.oncomplete = () => {
+      db.close();
+      resolve(result);
+    };
+    tx.onabort = () => {
+      db.close();
+      reject(tx.error ?? new Error("transaction aborted"));
+    };
+    // tx.onerror is followed by onabort, which settles the promise.
+  });
+}
+
 /** IndexedDB-backed store; every method rejects cleanly when IndexedDB is unavailable. */
 export const idbStore: SpriteStore = {
-  async get(key) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const req = db.transaction(STORE).objectStore(STORE).get(key);
-      req.onsuccess = () => resolve((req.result as Blob | undefined) ?? null);
-      req.onerror = () => reject(req.error);
-    });
-  },
-  async put(key, blob) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, "readwrite");
-      tx.objectStore(STORE).put(blob, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  },
+  get: async (key) => ((await withStore("readonly", (s) => s.get(key))) as Blob | undefined) ?? null,
+  put: async (key, blob) => void (await withStore("readwrite", (s) => s.put(blob, key))),
+  keys: async () => (await withStore("readonly", (s) => s.getAllKeys())).map(String),
+  remove: async (key) => void (await withStore("readwrite", (s) => s.delete(key))),
 };
+
+/** Deletes every stored sprite whose species id is not in `keepIds`. Returns the removed keys. */
+export async function pruneSprites(keepIds: Iterable<string>, store: SpriteStore): Promise<string[]> {
+  const keep = new Set([...keepIds].map(spriteKey));
+  const removed: string[] = [];
+  for (const key of await store.keys()) {
+    if (keep.has(key)) continue;
+    await store.remove(key);
+    removed.push(key);
+  }
+  return removed;
+}

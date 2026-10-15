@@ -4,7 +4,7 @@ import { SPECIES } from "./critters";
 import type { Species, Element } from "./critters";
 import { MOVESETS } from "./battle";
 import type { Move, Critter } from "./battle";
-import { idbStore, loadOrCache, pickSpriteSource } from "./spriteCache";
+import { idbStore, loadOrCache, pickSpriteSource, pruneSprites } from "./spriteCache";
 
 // --- sprite URL resolver (custom critters load from IndexedDB, then a remote URL, not /sprites) ---
 const spriteUrls = new Map<string, string>();
@@ -17,13 +17,41 @@ export function spriteUrl(id: string): string {
   return pickSpriteSource(id, cachedObjectUrls.get(id), spriteUrls.get(id));
 }
 
+/** Fired when a cached sprite becomes available after the remote URL may already have been rendered. */
+export const spriteEvents = new EventTarget();
+export interface SpriteReadyDetail {
+  id: string;
+  /** The URL that was in use before the switch (an <img> still showing it needs refreshing). */
+  previous: string;
+  next: string;
+}
+
 /** Copy a summoned critter's image into IndexedDB and serve it from there. Safe to call on every
  *  load: it reads the store first, only fetches when missing, and never throws. */
 export async function cacheCustomSprite(c: Pick<CustomSpecies, "id" | "imageUrl">): Promise<void> {
   if (typeof indexedDB === "undefined" || typeof fetch === "undefined") return;
   const blob = await loadOrCache(c.id, c.imageUrl, { store: idbStore, fetchImpl: fetch.bind(globalThis) });
   if (!blob || cachedObjectUrls.has(c.id)) return;
-  cachedObjectUrls.set(c.id, URL.createObjectURL(blob));
+  const previous = c.imageUrl; // what an <img> rendered before the cache landed is showing
+  const next = URL.createObjectURL(blob);
+  cachedObjectUrls.set(c.id, next);
+  spriteEvents.dispatchEvent(new CustomEvent<SpriteReadyDetail>("sprite-ready", { detail: { id: c.id, previous, next } }));
+}
+
+/** Drop cached sprites for species not in `keepIds` (New Game, or records orphaned by an older save). */
+export async function pruneCustomSprites(keepIds: Iterable<string>): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
+  const keep = new Set(keepIds);
+  try {
+    await pruneSprites(keep, idbStore);
+  } catch {
+    /* storage unavailable: nothing to prune */
+  }
+  for (const [id, url] of cachedObjectUrls) {
+    if (keep.has(id)) continue;
+    URL.revokeObjectURL(url);
+    cachedObjectUrls.delete(id);
+  }
 }
 
 export interface CustomSpecies {
