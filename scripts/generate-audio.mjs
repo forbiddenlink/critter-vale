@@ -49,57 +49,88 @@ const probeDuration = (f) =>
   Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString());
 
 const START_TRIM = "silenceremove=start_periods=1:start_threshold=-45dB";
+const ff = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...args]);
+const stderrOf = (args) => spawnSync("ffmpeg", ["-hide_banner", "-nostats", ...args], { encoding: "utf8" }).stderr;
 
-/** Per-sound clean-up chain (applied before normalisation). */
-function chainFor(name, tmpWav) {
+/** Per-sound clean-up applied after trimming, before loudness matching. `d` is the trimmed length. */
+function eqChain(name, d) {
+  const fadeOut = (sec, curve = "tri") => `afade=t=out:st=${Math.max(0, d - sec).toFixed(3)}:d=${sec}:curve=${curve}`;
+  switch (name) {
+    case "ui-click":
+    case "ui-cancel":
+      return ["afade=t=out:st=0.235:d=0.015"];
+    case "ui-confirm":
+      return ["equalizer=f=3000:t=q:w=2:g=-4", "afade=t=out:st=0.235:d=0.015"]; // tame the harsh ~3kHz peak
+    case "hit-ember":
+      return ["highshelf=f=6000:g=-4", fadeOut(0.15, "exp")]; // natural, not abrupt, tail
+    case "hit-leaf":
+      return ["highpass=f=150", "highshelf=f=5000:g=-6", fadeOut(0.12)]; // cut tail hiss
+    case "summon-shimmer":
+      return ["highshelf=f=6000:g=-4", fadeOut(0.15)];
+    default:
+      return [];
+  }
+}
+
+/** Loudness targets. Hits and shimmer use two-pass EBU R128 loudnorm (true peak -1dBTP); UI sounds
+ *  are too short for integrated-LUFS gating, so they are matched by RMS (hits are ~6dB louder). */
+const LUFS = { "summon-shimmer": -18 };
+const HIT_LUFS = -16;
+const UI_RMS_DB = -22;
+
+function loudnessFilter(name, wav) {
   if (name.startsWith("ui-")) {
-    // UI sounds are one short transient: drop leading silence, keep <=250ms, 15ms fade-out.
-    return [START_TRIM, "atrim=0:0.25", "afade=t=out:st=0.235:d=0.015"];
+    const rms = Number(/RMS level dB: (-?[\d.]+)/.exec(stderrOf(["-i", wav, "-af", "astats=measure_overall=RMS_level", "-f", "null", "-"]))?.[1]);
+    const gain = Number.isFinite(rms) ? UI_RMS_DB - rms : 0;
+    return `volume=${gain.toFixed(2)}dB,alimiter=limit=0.891:level=disabled`;
   }
-  const chain = [START_TRIM];
-  if (name === "hit-ember" || name === "summon-shimmer") chain.push("highshelf=f=6000:g=-4");
-  if (name === "summon-shimmer") {
-    const d = probeDuration(tmpWav);
-    chain.push(`afade=t=out:st=${Math.max(0, d - 0.15).toFixed(3)}:d=0.15`);
-  }
-  return chain;
+  const I = LUFS[name] ?? HIT_LUFS;
+  const out = stderrOf(["-i", wav, "-af", `loudnorm=I=${I}:TP=-1:LRA=11:print_format=json`, "-f", "null", "-"]);
+  const m = JSON.parse(out.slice(out.lastIndexOf("{"), out.lastIndexOf("}") + 1));
+  return (
+    `loudnorm=I=${I}:TP=-1:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:` +
+    `measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`
+  );
 }
 
 function encodeSfx(name, raw, dest) {
-  const full = join(TMP, `${name}.full.wav`);
   const cut = join(TMP, `${name}.cut.wav`);
-  const run = (args) => execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...args]);
-  run(["-i", raw, "-ac", "1", "-ar", "22050", full]); // untrimmed: durations are measured from this
-  run(["-i", full, "-af", chainFor(name, full).join(","), cut]);
-  const src = probeDuration(cut) < 0.05 ? full : cut; // trimming ate a very quiet blip: keep it whole
-  // Peak-normalise to -3dBFS so no effect jumps out.
-  const vd = spawnSync("ffmpeg", ["-hide_banner", "-i", src, "-af", "volumedetect", "-f", "null", "-"], { encoding: "utf8" });
-  const peak = Number(/max_volume: (-?[\d.]+) dB/.exec(vd.stderr)?.[1]);
-  const gain = Number.isFinite(peak) ? -3 - peak : 0;
-  run(["-i", src, "-af", `volume=${gain.toFixed(2)}dB`, "-b:a", "64k", dest]);
-  rmSync(full);
+  const eq = join(TMP, `${name}.eq.wav`);
+  const trim = name.startsWith("ui-") ? `${START_TRIM},atrim=0:0.25` : START_TRIM;
+  ff(["-i", raw, "-ac", "1", "-ar", "22050", "-af", trim, cut]);
+  if (probeDuration(cut) < 0.05) ff(["-i", raw, "-ac", "1", "-ar", "22050", cut]); // trim ate a quiet blip
+  const chain = eqChain(name, probeDuration(cut));
+  ff(["-i", cut, ...(chain.length ? ["-af", chain.join(",")] : []), eq]);
+  ff(["-i", eq, "-af", loudnessFilter(name, eq), "-b:a", "64k", dest]);
   rmSync(cut);
+  rmSync(eq);
 }
+
+// Raw SFX masters are committed so loudness/EQ can be re-tuned without paying for regeneration.
+const SRC = new URL("./audio-src/", import.meta.url).pathname;
+mkdirSync(SRC, { recursive: true });
 
 const wanted = process.argv.slice(2);
 let credits = 0;
 for (const [name, spec] of Object.entries(PACK)) {
   if (wanted.length && !wanted.includes(name)) continue;
-  console.log("generating", name);
-  const { url, credits: c } = await run(spec.model, spec.input);
-  credits += c ?? 0;
-  if (!url) throw new Error(`no output for ${name}`);
-  const raw = join(TMP, `${name}.bin`);
-  writeFileSync(raw, Buffer.from(await (await fetch(url)).arrayBuffer()));
+  const raw = spec.kind === "sfx" ? join(SRC, `${name}.bin`) : join(TMP, `${name}.bin`);
+  if (!existsSync(raw)) {
+    console.log("generating", name);
+    const { url, credits: c } = await run(spec.model, spec.input);
+    credits += c ?? 0;
+    if (!url) throw new Error(`no output for ${name}`);
+    writeFileSync(raw, Buffer.from(await (await fetch(url)).arrayBuffer()));
+  } else console.log("reprocessing", name);
   const dest = join(OUT, `${name}.${spec.kind === "music" ? "m4a" : "mp3"}`);
   // Music: full-length AAC 64k stereo (~1.4MB for 3 minutes); src/audio.ts crossfades the tail into
-  // the head at runtime for a gapless loop. SFX: cleaned up, peak-normalised to -3dBFS, mono mp3.
+  // the head at runtime for a gapless loop. SFX: cleaned up, loudness-matched, mono mp3.
   if (spec.kind === "music") {
-    execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "64k", dest]);
+    ff(["-i", raw, "-c:a", "aac", "-ac", "2", "-ar", "44100", "-b:a", "64k", dest]);
+    rmSync(raw);
   } else {
     encodeSfx(name, raw, dest);
   }
-  rmSync(raw);
   if (!existsSync(dest)) throw new Error(`transcode failed: ${name}`);
 }
 console.log("credits used:", credits);
