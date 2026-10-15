@@ -102,9 +102,16 @@ export function redisEnv(env) {
   return url && token ? { url, token } : null;
 }
 
+/** True when exactly one of URL/token is set: a misconfigured store, not an absent one. */
+export function redisEnvPartial(env) {
+  const url = env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
+  const token = env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
+  return Boolean(url) !== Boolean(token);
+}
+
 /**
  * Chooses the guard for this deploy: memory only when no Redis env is present, otherwise Redis
- * (throwing GuardUnavailableError if it cannot be set up). `loadDeps` is injectable for tests; by default the Upstash
+ * (throwing it also throws when the env is only half set; GuardUnavailableError if it cannot be set up). `loadDeps` is injectable for tests; by default the Upstash
  * packages are imported only when credentials exist.
  */
 export async function selectGuard(
@@ -112,7 +119,11 @@ export async function selectGuard(
   { perMinute = 6, dailyCap = 50, loadDeps = defaultLoadDeps, timeoutMs = REDIS_TIMEOUT_MS } = {}
 ) {
   const creds = redisEnv(env);
-  if (!creds) return createGuard({ perMinute, dailyCap });
+  if (!creds) {
+    // A half-set config is a deployment mistake; silently using per-instance memory would hide it.
+    if (redisEnvPartial(env)) throw new GuardUnavailableError();
+    return createGuard({ perMinute, dailyCap });
+  }
   try {
     const { Redis, Ratelimit } = await loadDeps();
     const redis = new Redis(creds);

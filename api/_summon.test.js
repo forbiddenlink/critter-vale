@@ -91,4 +91,16 @@ describe("api/summon handler", () => {
     vi.doUnmock("@upstash/redis");
     vi.doUnmock("@upstash/ratelimit");
   });
+
+  it("returns 503 with zero paid calls when Redis config is only half set", async () => {
+    for (const k of ["UPSTASH_REDIS_REST_URL", "KV_REST_API_TOKEN"]) {
+      process.env[k] = "x";
+      vi.resetModules();
+      const h = (await import("./summon.js")).default;
+      const r = await call(h, { body: { op: "gen", description: "a fox", element: "Ember" } });
+      expect(r.code).toBe(503);
+      expect(started).toEqual([]);
+      delete process.env[k];
+    }
+  });
 });

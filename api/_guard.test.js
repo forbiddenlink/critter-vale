@@ -160,6 +160,19 @@ describe("selectGuard", () => {
     expect((await selectGuard({ KV_REST_API_URL: "u", KV_REST_API_TOKEN: "t" }, { loadDeps })).kind).toBe("redis");
   });
 
+  it("fails closed on partial config (URL only or token only), loading nothing", async () => {
+    const spy = vi.fn(loadDeps);
+    for (const env of [
+      { UPSTASH_REDIS_REST_URL: "u" },
+      { UPSTASH_REDIS_REST_TOKEN: "t" },
+      { KV_REST_API_URL: "u" },
+      { KV_REST_API_TOKEN: "t" },
+    ]) {
+      await expect(selectGuard(env, { loadDeps: spy })).rejects.toBeInstanceOf(GuardUnavailableError);
+    }
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it("fails closed if credentials are set but the Redis packages fail to load", async () => {
     await expect(
       selectGuard(
