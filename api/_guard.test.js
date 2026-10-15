@@ -107,6 +107,19 @@ describe("createRedisGuard", () => {
     expect(redis.ttl.get("cv:genrun:run-1")).toBe(86400);
   });
 
+  it("treats a ratelimit reason:timeout as a failure, not an allow", async () => {
+    const g = createRedisGuard({ redis: fakeRedis(), limiter: { limit: async () => ({ success: true, reason: "timeout" }) } });
+    await expect(g.throttled("a")).rejects.toBeInstanceOf(GuardUnavailableError);
+  });
+
+  it("bounds hanging INCR/SET calls", async () => {
+    const hang = () => new Promise(() => {});
+    const g = createRedisGuard({ redis: { incr: hang, expire: hang, set: hang }, limiter: { limit: hang }, timeoutMs: 20 });
+    await expect(g.takeBudget()).rejects.toBeInstanceOf(GuardUnavailableError);
+    await expect(g.claimGenRun("r")).rejects.toBeInstanceOf(GuardUnavailableError);
+    await expect(g.throttled("a")).rejects.toBeInstanceOf(GuardUnavailableError);
+  });
+
   it("fails closed (throws) when Redis errors", async () => {
     const boom = async () => {
       throw new Error("down");
@@ -154,5 +167,23 @@ describe("selectGuard", () => {
         { loadDeps: async () => { throw new Error("missing"); } }
       )
     ).rejects.toBeInstanceOf(GuardUnavailableError);
+  });
+});
+
+describe("selectGuard with the real Upstash SDK and a hanging network", () => {
+  it("rejects every guard call instead of allowing the request", async () => {
+    vi.stubGlobal("fetch", () => new Promise(() => {})); // never resolves
+    try {
+      const g = await selectGuard(
+        { UPSTASH_REDIS_REST_URL: "https://redis.invalid", UPSTASH_REDIS_REST_TOKEN: "t" },
+        { timeoutMs: 50 }
+      );
+      expect(g.kind).toBe("redis");
+      await expect(g.throttled("1.2.3.4")).rejects.toBeInstanceOf(GuardUnavailableError);
+      await expect(g.takeBudget()).rejects.toBeInstanceOf(GuardUnavailableError);
+      await expect(g.claimGenRun("run-abcdefghijklmnop")).rejects.toBeInstanceOf(GuardUnavailableError);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

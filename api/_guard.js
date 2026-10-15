@@ -46,6 +46,7 @@ export function createGuard({ perMinute = 6, dailyCap = 50, now = () => Date.now
 }
 
 const DAY_SECONDS = 86_400;
+const REDIS_TIMEOUT_MS = 1500;
 
 /** Thrown when the shared store is configured but unreachable; the paid route must refuse. */
 export class GuardUnavailableError extends Error {
@@ -60,7 +61,10 @@ export class GuardUnavailableError extends Error {
  * `redis` an @upstash/redis client. Fails CLOSED: a Redis error throws GuardUnavailableError,
  * because falling back to per-instance memory would silently lift the shared spend cap.
  */
-export function createRedisGuard({ redis, limiter, dailyCap = 50, now = () => Date.now() }) {
+export function createRedisGuard({ redis, limiter, dailyCap = 50, now = () => Date.now(), timeoutMs = REDIS_TIMEOUT_MS }) {
+  // Every Redis call is time-bounded: a stalled store must not hang the route or let requests through.
+  const bounded = (p) =>
+    Promise.race([p, new Promise((_, reject) => setTimeout(() => reject(new Error("redis timeout")), timeoutMs).unref?.())]);
   const closed = async (fn) => {
     try {
       return await fn();
@@ -69,17 +73,24 @@ export function createRedisGuard({ redis, limiter, dailyCap = 50, now = () => Da
     }
   };
   return {
-    throttled: (ip) => closed(async () => !(await limiter.limit(ip)).success),
+    throttled: (ip) =>
+      closed(async () => {
+        const r = await bounded(limiter.limit(ip));
+        // @upstash/ratelimit resolves {success:true, reason:"timeout"} instead of throwing when
+        // Redis stalls; that is a failure here, not an allow.
+        if (r.reason === "timeout") throw new Error("ratelimit timeout");
+        return !r.success;
+      }),
     takeBudget: () =>
       closed(async () => {
         // One counter per UTC day; the date in the key keeps a missed EXPIRE harmless.
         const key = `cv:budget:${new Date(now()).toISOString().slice(0, 10)}`;
-        const n = await redis.incr(key);
-        if (n === 1) await redis.expire(key, DAY_SECONDS);
+        const n = await bounded(redis.incr(key));
+        if (n === 1) await bounded(redis.expire(key, DAY_SECONDS));
         return n <= dailyCap;
       }),
     claimGenRun: (runId) =>
-      closed(async () => (await redis.set(`cv:genrun:${runId}`, 1, { nx: true, ex: DAY_SECONDS })) === "OK"),
+      closed(async () => (await bounded(redis.set(`cv:genrun:${runId}`, 1, { nx: true, ex: DAY_SECONDS }))) === "OK"),
     kind: "redis",
   };
 }
@@ -98,7 +109,7 @@ export function redisEnv(env) {
  */
 export async function selectGuard(
   env,
-  { perMinute = 6, dailyCap = 50, loadDeps = defaultLoadDeps } = {}
+  { perMinute = 6, dailyCap = 50, loadDeps = defaultLoadDeps, timeoutMs = REDIS_TIMEOUT_MS } = {}
 ) {
   const creds = redisEnv(env);
   if (!creds) return createGuard({ perMinute, dailyCap });
@@ -109,8 +120,9 @@ export async function selectGuard(
       redis,
       limiter: Ratelimit.slidingWindow(perMinute, "60 s"),
       prefix: "cv:rl",
+      timeout: timeoutMs, // default is 5s, then it silently ALLOWS the request
     });
-    return createRedisGuard({ redis, limiter, dailyCap });
+    return createRedisGuard({ redis, limiter, dailyCap, timeoutMs });
   } catch {
     throw new GuardUnavailableError(); // creds are set: never degrade to per-instance memory
   }
