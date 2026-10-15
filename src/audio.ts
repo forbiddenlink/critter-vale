@@ -133,8 +133,14 @@ const LOOP_FADE_SEC = 3;
 let audioCtx: AudioContext | null = null;
 let webGain: GainNode | null = null;
 let webSource: AudioBufferSourceNode | null = null;
-let webToken = 0;
+/** Bumped by every play/pause/switch request; any async step holding an older value is stale. */
+let playGen = 0;
 const loopBuffers: Partial<Record<MusicContext, Promise<AudioBuffer>>> = {};
+
+type AudioCtor = typeof AudioContext;
+const audioCtor = (): AudioCtor | undefined =>
+  (globalThis as { AudioContext?: AudioCtor; webkitAudioContext?: AudioCtor }).AudioContext ??
+  (globalThis as { webkitAudioContext?: AudioCtor }).webkitAudioContext;
 
 function loadLoop(ctx: AudioContext, c: MusicContext): Promise<AudioBuffer> {
   return (loopBuffers[c] ??= fetch(MUSIC_SRC[c])
@@ -157,54 +163,78 @@ function loadLoop(ctx: AudioContext, c: MusicContext): Promise<AudioBuffer> {
 }
 
 function stopWeb() {
-  webToken++;
+  const src = webSource;
+  webSource = null;
+  if (!src) return;
   try {
-    webSource?.stop();
+    src.stop();
   } catch {
     /* already stopped */
   }
-  webSource = null;
+  src.disconnect();
 }
 
-/** WebAudio looping playback. Resolves false when unsupported or the file cannot be decoded. */
-async function playWeb(c: MusicContext): Promise<boolean> {
-  const Ctor: typeof AudioContext | undefined =
-    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return false;
+/** Creates the AudioContext (inside a gesture when possible) and keeps it wired to the gain node. */
+function ensureCtx(): AudioContext | null {
+  if (audioCtx) return audioCtx;
+  const Ctor = audioCtor();
+  if (!Ctor) return null;
   try {
-    if (!audioCtx) {
-      audioCtx = new Ctor();
-      webGain = audioCtx.createGain();
-      webGain.gain.value = MUSIC_VOLUME;
-      webGain.connect(audioCtx.destination);
-    }
-    stopWeb();
-    const token = webToken;
-    const buf = await loadLoop(audioCtx, c);
-    if (token !== webToken || !enabled || context !== c) return true; // superseded or muted meanwhile
-    await audioCtx.resume();
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.loop = true;
-    src.connect(webGain!);
-    src.start();
-    webSource = src;
-    return true;
+    audioCtx = new Ctor();
   } catch {
-    return false;
+    return null;
   }
+  webGain = audioCtx.createGain();
+  webGain.gain.value = MUSIC_VOLUME;
+  webGain.connect(audioCtx.destination);
+  // iOS can move a running context to "interrupted" (calls, Siri); a later gesture must resume it.
+  audioCtx.addEventListener("statechange", () => {
+    if (started && enabled && audioCtx && audioCtx.state !== "running") rearmGesture();
+  });
+  return audioCtx;
+}
+
+type PlayResult = "playing" | "stale" | "failed";
+
+/** WebAudio looping playback, rechecking generation/mute/context after every await. */
+async function playWeb(c: MusicContext, gen: number): Promise<PlayResult> {
+  const ctx = ensureCtx();
+  if (!ctx) return "failed";
+  const current = () => gen === playGen && enabled && started && context === c;
+  let buf: AudioBuffer;
+  try {
+    buf = await loadLoop(ctx, c);
+  } catch {
+    return current() ? "failed" : "stale";
+  }
+  if (!current()) return "stale";
+  try {
+    await ctx.resume(); // already requested synchronously in the gesture; this just waits for it
+  } catch {
+    return current() ? "failed" : "stale";
+  }
+  if (!current()) return "stale"; // superseded or muted while resume() was pending
+  music?.pause(); // only one backend active
+  stopWeb();
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+  src.connect(webGain!);
+  src.start();
+  webSource = src;
+  return "playing";
 }
 
 /** Starts (or restarts) the track for the current context if sound is on. */
 function playCurrent() {
   if (!started || !enabled) return;
-  void playWeb(context).then((ok) => {
-    if (ok) return;
-    // WebAudio unavailable or decode failed: plain HTMLAudio, which can also fall back to bgm.mp3
+  const gen = ++playGen;
+  void playWeb(context, gen).then((result) => {
+    if (result !== "failed" || gen !== playGen || !enabled) return; // stale or muted: do nothing
+    // WebAudio unavailable or decode failed: plain HTMLAudio, which can fall back to bgm.mp3
+    stopWeb();
     music = trackFor(context);
-    void music.play().catch(() => {
-      started = false; // autoplay blocked: allow the next gesture to try again
-    });
+    void music.play().catch(() => rearmGesture()); // autoplay blocked: next gesture retries
   });
 }
 
@@ -215,12 +245,26 @@ function trackFor(ctx: MusicContext): HTMLAudioElement {
 }
 
 function pauseAllMusic() {
+  playGen++; // invalidates any in-flight load/resume
   stopWeb();
   music?.pause();
 }
 
+/** Stops every pooled effect that is currently sounding. */
+function stopAllSfx() {
+  for (const p of Object.values(pools)) {
+    for (const a of p ?? []) {
+      a.pause();
+      a.currentTime = 0;
+    }
+  }
+}
+
+/** Must run synchronously inside a user gesture: resume() is only honoured there on iOS/Safari. */
 export function startMusic() {
   started = true;
+  const ctx = ensureCtx();
+  if (ctx && enabled && ctx.state !== "running") void ctx.resume().catch(() => {});
   playCurrent();
 }
 
@@ -241,9 +285,52 @@ export function toggleMusic(): boolean {
     return true;
   }
   enabled = !enabled;
-  if (enabled) playCurrent();
-  else pauseAllMusic();
+  if (enabled) {
+    const ctx = ensureCtx();
+    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => {});
+    playCurrent();
+  } else {
+    pauseAllMusic();
+    stopAllSfx();
+  }
   return enabled;
+}
+
+// --- gesture unlock: listeners stay armed until audio is actually running ---
+let gestureTarget: EventTarget | null = null;
+let gestureArmed = false;
+const GESTURES = ["pointerdown", "keydown", "touchend"] as const;
+
+function onGesture() {
+  if (!started) startMusic();
+  else if (enabled) {
+    const ctx = ensureCtx();
+    if (ctx && ctx.state !== "running") void ctx.resume().catch(() => {}); // sync, inside the gesture
+    if (!webSource && !(music && !music.paused)) playCurrent();
+  }
+  // Disarm only once the context is genuinely running (or the player muted); otherwise keep waiting.
+  if (!enabled || audioCtx?.state === "running" || (music && !music.paused)) disarmGesture();
+}
+
+function disarmGesture() {
+  if (!gestureTarget || !gestureArmed) return;
+  for (const g of GESTURES) gestureTarget.removeEventListener(g, onGesture);
+  gestureArmed = false;
+}
+
+function rearmGesture() {
+  if (!gestureTarget || gestureArmed || !started || !enabled) return;
+  for (const g of GESTURES) gestureTarget.addEventListener(g, onGesture);
+  gestureArmed = true;
+}
+
+/** Arm the first-gesture music start; stays armed until playback is running and re-arms if the
+ *  context is later suspended or interrupted. */
+export function armMusicOnGesture(target: EventTarget = window) {
+  gestureTarget = target;
+  if (gestureArmed) return;
+  for (const g of GESTURES) target.addEventListener(g, onGesture);
+  gestureArmed = true;
 }
 
 /** Click/confirm/cancel sounds for every button, via one delegated listener. */

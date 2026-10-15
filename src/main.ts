@@ -23,7 +23,7 @@ import type { SpriteReadyDetail } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
 import { ITEMS, SHOP_ORDER, starterBag, STARTER_SPRIGS, battleReward, add } from "./game/items";
 import type { Bag, ItemId } from "./game/items";
-import { sfx, startMusic, toggleMusic, installUiSounds } from "./audio";
+import { sfx, startMusic, toggleMusic, installUiSounds, armMusicOnGesture } from "./audio";
 import { readSave, writeSave, clearSave } from "./game/save";
 import type { SaveData } from "./game/save";
 import { quirkDef } from "./game/traits";
@@ -646,16 +646,6 @@ touchControls.querySelectorAll<HTMLButtonElement>("[data-key]").forEach((button:
 });
 touchControls.querySelector(".touch-interact")!.addEventListener("click", (): void => world.interact());
 document.body.appendChild(touchControls);
-
-function armMusicOnGesture() {
-  const start = () => {
-    startMusic();
-    window.removeEventListener("keydown", start);
-    window.removeEventListener("pointerdown", start);
-  };
-  window.addEventListener("keydown", start);
-  window.addEventListener("pointerdown", start);
-}
 
 function resumeFromSave(s: SaveData) {
   // Re-register summoned critters BEFORE rebuilding the team (team may reference their ids).
