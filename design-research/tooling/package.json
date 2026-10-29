@@ -2,5 +2,10 @@
 	"devDependencies": {
 		"lighthouse": "13.5.0",
 		"@axe-core/playwright": "4.14.0"
+	},
+	"pnpm": {
+		"overrides": {
+			"fast-uri": ">=3.1.9 <4"
+		}
 	}
 }
