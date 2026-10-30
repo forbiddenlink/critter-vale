@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f5f0e5" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>404 - Off the path | Critter Vale</title>
+    <style>
+      :root {
+        --paper: #f5f0e5; --paper-light: #fffcf5; --forest: #203c32; --moss: #58694f;
+        --line: #cfcbbb; --aqua: #23616d; --leaf: #42613a; --ink-dim: #57645b; --c: #3ca7ff;
+        --font-display: Georgia, 'Times New Roman', serif;
+      }
+      * { margin: 0; box-sizing: border-box; }
+      body { min-height: 100vh; background: var(--paper); color: var(--forest); font-family: system-ui, "Segoe UI", sans-serif; }
+      a:focus-visible { outline: 3px solid var(--aqua); outline-offset: 4px; }
+      .inner { max-width: 1248px; min-height: 100vh; margin: auto; padding: 28px 48px; display: flex; flex-direction: column; }
+      .masthead { display: flex; align-items: center; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--forest); font: 11px ui-monospace, monospace; letter-spacing: .14em; }
+      .wordmark { display: flex; align-items: center; gap: 8px; font: bold 25px var(--font-display); letter-spacing: -.08em; color: var(--forest); text-decoration: none; }
+      .sprout { font-size: 24px; color: var(--leaf); letter-spacing: 0; }
+      .edition { margin-left: auto; }
+      .eyebrow { display: block; font: 11px ui-monospace, monospace; letter-spacing: .14em; color: var(--moss); }
+      .stage { flex: 1; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 48px; padding: 44px 0 32px; }
+      h1 { font: 108px/.98 var(--font-display); font-weight: 400; letter-spacing: -.065em; margin: 12px 0 24px; }
+      h1 em { font-weight: 400; color: var(--leaf); }
+      .copy p { font-size: 16px; line-height: 1.65; color: var(--ink-dim); max-width: 420px; margin-bottom: 28px; }
+      .card { display: block; max-width: 380px; margin-left: auto; width: 100%; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper-light); box-shadow: 0 3px 0 #203c320a; color: var(--forest); text-decoration: none; transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+      .card:hover { transform: translateY(-5px); border-color: var(--forest); box-shadow: 0 10px 20px #203c3212; }
+      .card:active { transform: translateY(0); }
+      .index { display: flex; align-items: center; justify-content: space-between; font: 10px ui-monospace, monospace; color: var(--moss); letter-spacing: .08em; }
+      .tag { border-radius: 999px; background: color-mix(in srgb, var(--c) 15%, var(--paper)); color: var(--forest); font: 600 11px system-ui, sans-serif; letter-spacing: 0; padding: 5px 10px; }
+      .art { display: grid; place-items: center; height: 226px; position: relative; }
+      .art::before { content: ''; position: absolute; width: 180px; height: 180px; border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line)); border-radius: 50%; background: color-mix(in srgb, var(--c) 8%, var(--paper-light)); }
+      .art img { position: relative; width: 220px; height: 220px; filter: drop-shadow(0 12px 8px #203c3218); transition: transform .25s ease; }
+      .card:hover img { transform: translateY(-3px) rotate(-2deg); }
+      .name { display: block; font: 32px var(--font-display); letter-spacing: -.035em; }
+      .desc { display: block; font-size: 13px; line-height: 1.5; color: var(--ink-dim); margin-top: 4px; }
+      .cta { display: flex; align-items: center; justify-content: space-between; min-height: 46px; margin-top: 18px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-weight: 600; }
+      .cta span { font-size: 22px; font-weight: 400; }
+      .card:hover .cta { background: var(--forest); color: var(--paper-light); border-color: var(--forest); }
+      footer { padding-top: 20px; border-top: 1px solid var(--line); color: var(--ink-dim); font-size: 12px; line-height: 1.7; }
+      @media (max-width: 760px) {
+        .inner { padding: 20px 20px; }
+        .masthead { gap: 12px; }
+        .edition { display: none; }
+        .stage { grid-template-columns: 1fr; gap: 24px; padding: 28px 0 24px; }
+        h1 { font-size: clamp(52px, 17vw, 76px); margin-bottom: 16px; }
+        .copy p { margin-bottom: 0; }
+        .card { margin: 0; max-width: none; }
+        .art { height: 200px; }
+        .art img { width: 190px; height: 190px; }
+      }
+      @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <div class="inner">
+      <header class="masthead">
+        <a class="wordmark" href="/" aria-label="Critter Vale home">CV<span class="sprout" aria-hidden="true">✳</span></a>
+        <span>THE VALE FIELD JOURNAL</span>
+        <span class="edition">A creature-collecting adventure</span>
+      </header>
+      <main class="stage">
+        <div class="copy">
+          <span class="eyebrow">404 · OFF THE PATH</span>
+          <h1>Lost in<br>the <em>Vale.</em></h1>
+          <p>A curious world, but this page is not in it. A wild critter is blocking the trail, so run back the way you came.</p>
+        </div>
+        <a class="card" href="/" style="--c:#3ca7ff">
+          <span class="index">WILD ENCOUNTER<span class="tag">Aqua</span></span>
+          <span class="art"><img src="/sprites/tadmite-title.webp" width="240" height="240" alt="" /></span>
+          <span class="name">A wild Tadmite appeared!</span>
+          <span class="desc">No page here. Ember beats Leaf, Leaf beats Aqua, Aqua beats Ember.</span>
+          <span class="cta">Run back to the Vale<span aria-hidden="true">↗</span></span>
+        </a>
+      </main>
+      <footer>Progress saves in this browser. No account needed.</footer>
+    </div>
+  </body>
+</html>
