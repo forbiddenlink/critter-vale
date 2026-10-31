@@ -1,6 +1,7 @@
 // Critter-Dex: a collection screen over all species, showing caught / seen / unknown.
 import { SPECIES } from "../game/critters";
 import { spriteUrl } from "../game/customSpecies";
+import { buildDexRows, sortDexRows, type DexSortDir, type DexSortKey } from "./dexTable";
 
 /**
  * Cursor-tracked holo-foil shimmer for `.holo` cards inside `scope`.
@@ -68,8 +69,13 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
         <label>Collection<select class="dex-state"><option value="all">All discoveries</option><option value="caught">Caught</option><option value="seen">Seen, not caught</option><option value="unknown">Undiscovered</option></select></label>
         <label>Element<select class="dex-element"><option value="all">All elements</option><option>Ember</option><option>Aqua</option><option>Leaf</option></select></label>
       </div>
+      <div class="dex-views" role="group" aria-label="Collection view">
+        <button type="button" class="dex-view" data-view="grid" aria-pressed="true">Grid</button>
+        <button type="button" class="dex-view" data-view="table" aria-pressed="false">Table</button>
+      </div>
       <p class="dex-results" role="status"></p>
       <div class="dex-grid"></div>
+      <div class="dex-table-wrap" hidden></div>
       <div class="dex-empty" hidden><h3>No field notes found</h3><p>Try another name or clear your filters. Undiscovered critters stay a mystery until you meet them.</p><button class="io-btn dex-reset">Clear filters</button></div>
       <div class="dex-hint">Catch wild critters in the tall grass to fill your Dex.</div>
     </div>`;
@@ -78,6 +84,30 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
   const stateFilter = root.querySelector<HTMLSelectElement>(".dex-state")!;
   const elementFilter = root.querySelector<HTMLSelectElement>(".dex-element")!;
   const grid = root.querySelector<HTMLElement>(".dex-grid")!;
+  const tableWrap = root.querySelector<HTMLElement>(".dex-table-wrap")!;
+  const viewButtons = [...root.querySelectorAll<HTMLButtonElement>(".dex-view")];
+  let view: "grid" | "table" = "grid";
+  let sortKey: DexSortKey = "no";
+  let sortDir: DexSortDir = "asc";
+  const COLUMNS: { key: DexSortKey; label: string }[] = [
+    { key: "no", label: "No." }, { key: "name", label: "Name" }, { key: "element", label: "Element" },
+    { key: "hp", label: "HP" }, { key: "atk", label: "ATK" }, { key: "def", label: "DEF" },
+  ];
+  const renderTable = (ids: string[]): void => {
+    const keep = new Set(ids);
+    const data = sortDexRows(buildDexRows(order, seen, caught).filter((r) => keep.has(r.id)), sortKey, sortDir);
+    const head = COLUMNS.map((c) => {
+      const active = c.key === sortKey;
+      return `<th scope="col" aria-sort="${active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}"><button type="button" class="dex-sort" data-key="${c.key}">${c.label}<span aria-hidden="true">${active ? (sortDir === "asc" ? " \u25B2" : " \u25BC") : ""}</span></button></th>`;
+    }).join("") + `<th scope="col">Status</th>`;
+    const cell = (v: string | number | null): string => (v === null ? `<span aria-hidden="true">?</span><span class="sr-only">Unknown</span>` : String(v));
+    const body = data.map((r) => `<tr class="dex-row ${r.state}">
+      <th scope="row">${String(r.no).padStart(3, "0")}</th>
+      <td>${r.name === null ? "Undiscovered" : r.name}</td>
+      <td>${cell(r.element)}</td><td>${cell(r.hp)}</td><td>${cell(r.atk)}</td><td>${cell(r.def)}</td>
+      <td>${r.state === "caught" ? "Caught" : r.state === "seen" ? "Seen" : "Unknown"}</td></tr>`).join("");
+    tableWrap.innerHTML = `<table class="dex-table"><caption class="sr-only">Critter-Dex field notes. Sort with the column header buttons.</caption><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+  };
   const renderGrid = (): void => {
     const query = search.value.trim().toLowerCase();
     const filtered = order.filter((id) => {
@@ -102,9 +132,26 @@ export function openDex(seen: Set<string>, caught: Set<string>) {
         ${isCaught ? `<div class="dex-stats">HP ${species.baseHp} · ATK ${species.baseAtk} · DEF ${species.baseDef}</div>` : ""}${evolution}
       </article>`;
     }).join("");
+    renderTable(filtered);
+    grid.hidden = view !== "grid";
+    tableWrap.hidden = view !== "table";
     root.querySelector(".dex-results")!.textContent = `${filtered.length} of ${total} field notes · Element filters show caught critters.`;
     (root.querySelector(".dex-empty") as HTMLElement).hidden = filtered.length > 0;
   };
+  viewButtons.forEach((b) => b.addEventListener("click", (): void => {
+    view = b.dataset.view === "table" ? "table" : "grid";
+    viewButtons.forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
+    renderGrid();
+  }));
+  tableWrap.addEventListener("click", (e): void => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>(".dex-sort");
+    if (!btn) return;
+    const key = btn.dataset.key as DexSortKey;
+    sortDir = key === sortKey && sortDir === "asc" ? "desc" : "asc";
+    sortKey = key;
+    renderGrid();
+    tableWrap.querySelector<HTMLButtonElement>(`.dex-sort[data-key="${key}"]`)?.focus();
+  });
   search.addEventListener("input", renderGrid);
   stateFilter.addEventListener("change", renderGrid);
   elementFilter.addEventListener("change", renderGrid);
