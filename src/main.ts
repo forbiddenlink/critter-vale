@@ -179,7 +179,7 @@ function drawHud() {
     <div class="hud-party-title">YOUR TEAM <span>${team.length} / ${MAX_TEAM}</span></div>
     <div class="hud-party" role="region" aria-label="Your party" tabindex="0">${team.map((m, index) => `<div class="hud-critter"><img src="${spriteUrl(m.species.id)}" alt="" width="42" height="42"><div><span>${m.species.name}<small>Lv ${m.level}</small></span><div class="hud-hp" role="meter" aria-label="${m.species.name} HP" aria-valuemin="0" aria-valuemax="${m.maxHp}" aria-valuenow="${m.hp}"><i style="width:${Math.max(0, m.hp / m.maxHp * 100)}%"></i></div><p class="party-trait">${m.species.element} · ${quirkDef(m.quirk).name}</p><p class="party-xp">${m.level >= 100 ? "Max level" : `${m.xp} / ${xpToNext(m.level)} XP to Lv ${m.level + 1}`}</p></div><small>${m.hp}/${m.maxHp}</small><button class="party-lead" data-index="${index}" aria-label="${index === leadIndex ? `${m.species.name} leads your next battle` : `Make ${m.species.name} your lead critter`}"${index === leadIndex || m.hp <= 0 ? " disabled" : ""}>${index === leadIndex ? "Leading" : m.hp <= 0 ? "Fainted" : "Lead"}</button></div>`).join("")}</div>
     <div class="hud-objective"><span class="eyebrow">NEXT IN YOUR JOURNAL</span><p>${objective}</p></div>
-    <details class="hud-notes"><summary>Trail notes &amp; controls</summary><p>Caught: ${caught.length ? caught.join(", ") : "none yet"}</p><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small><p>Ember ${crests.has("Ember") ? "✓" : "—"} · Aqua ${crests.has("Aqua") ? "✓" : "—"} · Leaf ${crests.has("Leaf") ? "✓" : "—"}</p></details>`;
+    <details class="hud-notes"><summary>Trail notes &amp; controls</summary><p>Caught: ${caught.length ? caught.join(", ") : "none yet"}</p><small>WASD / arrows · grass = wild critters · E talk/enter · green pad heals · C = Dex</small><p>Ember ${crests.has("Ember") ? "✓" : "no"} · Aqua ${crests.has("Aqua") ? "✓" : "no"} · Leaf ${crests.has("Leaf") ? "✓" : "no"}</p></details>`;
 }
 
 function persist() {
@@ -679,20 +679,30 @@ function showTitle(notice?: string) {
   title.className = "title";
   title.innerHTML = `
     <div class="title-inner">
-      <header class="title-masthead"><span class="wordmark">CV<span class="brand-sprout" aria-hidden="true">✳</span></span><span>THE VALE FIELD JOURNAL</span><span class="edition">A creature-collecting adventure</span></header>
+      <header class="title-masthead"><span class="wordmark" aria-hidden="true">CV</span><span>THE VALE FIELD JOURNAL</span><span class="edition">A creature-collecting adventure</span></header>
       <div class="title-intro">
-        <div><span class="eyebrow">YOUR ADVENTURE STARTS SMALL</span><h1>Critter <em>Vale.</em></h1></div>
-        <p>A curious world. A little wild company.<br>Explore the Vale, raise your team, and find<br class="desktop-break"> a partner for every adventure.</p>
+        <span class="eyebrow">YOUR ADVENTURE STARTS SMALL</span>
+        <h1>Critter Vale</h1>
+        <p>A curious world. A little wild company. Explore the Vale, raise your team, and find a partner for every adventure.</p>
       </div>
-      <div class="starter-heading"><h2>Choose your first partner</h2><span>THREE ELEMENTS. ONE FIRST FRIEND.</span></div>
       <span class="title-scroll-note">Scroll to meet all three partners ↓</span>
       ${notice ? `<p class="notice" role="alert">${notice}</p>` : ""}
       <div class="starters">
+        <svg class="cycle" viewBox="0 0 1100 540" aria-hidden="true" focusable="false">
+          <g class="arc-ember"><path d="M183 272 C183 160 260 122 380 122"/><polygon class="head" points="398,122 378,111 378,133"/><rect class="tag" x="206" y="136" width="70" height="26" rx="13"/><text x="241" y="154" text-anchor="middle">BEATS</text></g>
+          <g class="arc-leaf"><path d="M720 122 C840 122 917 160 917 262"/><polygon class="head" points="917,280 906,260 928,260"/><rect class="tag" x="825" y="136" width="70" height="26" rx="13"/><text x="860" y="154" text-anchor="middle">BEATS</text></g>
+          <g class="arc-aqua"><path d="M760 470 C680 520 420 520 350 472"/><polygon class="head" points="338,466 358,466 348,484"/><rect class="tag" x="515" y="494" width="70" height="26" rx="13"/><text x="550" y="512" text-anchor="middle">BEATS</text></g>
+        </svg>
+        <div class="starter-core">
+          <h2>Choose your first partner</h2>
+          <span>THREE ELEMENTS. ONE FIRST FRIEND.</span>
+          <p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p>
+        </div>
         ${STARTERS.map((id, index) => {
           const s = SPECIES[id];
           const strength = s.element === "Ember" ? "Leaf" : s.element === "Aqua" ? "Ember" : "Aqua";
           const temperament = s.element === "Ember" ? "A spark of possibility." : s.element === "Aqua" ? "Go with the current." : "Room to grow wild.";
-          return `<button class="starter holo" data-id="${id}" style="--c:${s.color}">
+          return `<button class="starter holo" data-id="${id}" data-el="${s.element}" data-beats="${s.element} beats ${strength}" style="--c:${s.color}">
             <span class="specimen-index">PARTNER 0${index + 1}<span class="s-el">${s.element}</span></span>
             <span class="specimen-art"><img src="/sprites/${id}-title.webp" width="240" height="240" alt="" fetchpriority="high"></span>
             <span class="specimen-copy"><span class="s-name">${s.name}</span><span class="s-description">${temperament}</span></span>
@@ -701,7 +711,7 @@ function showTitle(notice?: string) {
           </button>`;
         }).join("")}
       </div>
-      <footer class="title-footer"><p class="hint">Ember beats Leaf · Leaf beats Aqua · Aqua beats Ember</p><p><kbd>WASD</kbd> move <span>·</span> <kbd>E</kbd> interact <span>·</span> Touch controls on mobile</p><small>Progress saves in this browser. No account needed.</small></footer>
+      <footer class="title-footer"><p><kbd>WASD</kbd> move <span>·</span> <kbd>E</kbd> interact <span>·</span> Touch controls on mobile</p><small>Progress saves in this browser. No account needed.</small></footer>
     </div>`;
   document.body.appendChild(title);
   attachHolo(title.querySelector(".starters") as HTMLElement);
