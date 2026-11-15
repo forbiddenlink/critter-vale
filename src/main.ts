@@ -6,7 +6,6 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import "./style.css";
 import { installOverlayAccessibility } from "./ui/accessibility";
-import { openFieldGuide } from "./ui/fieldGuide";
 import { spriteUrl } from "./game/customSpecies";
 import { Overworld, BLOOM_LAYER } from "./world/overworld";
 import type { Npc } from "./world/overworld";
@@ -16,8 +15,6 @@ import { SPECIES, STARTERS } from "./game/critters";
 import type { Element } from "./game/critters";
 import { runBattle } from "./ui/battleUI";
 import { openDex, attachHolo } from "./ui/dex";
-import { openSummonLab } from "./ui/summonLab";
-import { openFusionLab } from "./ui/fusionLab";
 import { registerCustom, cacheCustomSprite, pruneCustomSprites, spriteEvents } from "./game/customSpecies";
 import type { SpriteReadyDetail } from "./game/customSpecies";
 import type { CustomSpecies } from "./game/customSpecies";
@@ -504,10 +501,14 @@ function showInterior(b: { name: string; kind: "home" | "lab" | "post"; color: n
         close();
       } else if (act === "summon") {
         close();
-        openSummonLab(onSummoned, wallet, SUMMON_COST, () => team.length >= MAX_TEAM);
+        void import("./ui/summonLab").then(({ openSummonLab }) =>
+          openSummonLab(onSummoned, wallet, SUMMON_COST, () => team.length >= MAX_TEAM),
+        );
       } else if (act === "fuse") {
         close();
-        openFusionLab({ party: team, wallet, cost: FUSION_COST, onFused });
+        void import("./ui/fusionLab").then(({ openFusionLab }) =>
+          openFusionLab({ party: team, wallet, cost: FUSION_COST, onFused }),
+        );
       } else {
         close(); // leave
       }
@@ -617,18 +618,21 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+const openGuide = (): void => {
+  void import("./ui/fieldGuide").then(({ openFieldGuide }) => openFieldGuide());
+};
 const guideBtn = document.createElement("button");
 guideBtn.className = "mute guidebtn";
 guideBtn.textContent = "Field guide";
 guideBtn.title = "Field guide (H)";
-guideBtn.addEventListener("click", openFieldGuide);
+guideBtn.addEventListener("click", openGuide);
 const tools = document.createElement("nav");
 tools.className = "game-tools";
 tools.setAttribute("aria-label", "Game tools");
 tools.append(dexBtn, guideBtn, mute, reset);
 document.body.appendChild(tools);
 window.addEventListener("keydown", (event: KeyboardEvent): void => {
-  if (event.key.toLowerCase() === "h" && team.length && !world.inputBlocked()) openFieldGuide();
+  if (event.key.toLowerCase() === "h" && team.length && !world.inputBlocked()) openGuide();
 });
 
 const touchControls = document.createElement("nav");
