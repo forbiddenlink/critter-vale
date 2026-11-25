@@ -1,5 +1,5 @@
 // Serverless proxy for the Critter Vale "Summon Lab".
-// Holds MAGICA_KEY server-side so the browser never sees it. Image generation
+// Holds SPIRAL_API_KEY server-side so the browser never sees it. Image generation
 // takes far longer than a serverless request may run, so this is a small state
 // machine the client orchestrates by polling (start -> poll -> bg-remove -> poll).
 //
@@ -8,12 +8,16 @@
 //   GET  ?runId=<id>                         -> { status, result }  (poll a run)
 //   POST { op:"bg", runId }                  -> { runId }        (bg removal on that gen's image)
 //
-// status is "pending" | "done" | "failed"; result is the Magica output URL array.
+// status is "pending" | "done" | "failed"; result is the Spiral output URL array.
 
 import { GuardUnavailableError, RUN_ID, sameOrigin, selectGuard } from "./_guard.js";
 
-const BASE = "https://api.magica.com/api/v1";
-const DONE_EXCLUDES = new Set(["RUNNING", "PENDING", "QUEUED"]);
+const BASE = "https://api.spiral.ai";
+const PENDING = new Set(["queued", "running"]);
+// Image gen via fal's hosted gpt-image-2; background removal via wavespeed (flat $0.0052/run,
+// cheaper than fal BEN v2 at $0.0325/MP, takes an image URL and returns a cutout).
+const GEN = { provider: "fal", model: "openai/gpt-image-2" };
+const BG = { provider: "wavespeed", model: "wavespeed-ai/image-background-remover" };
 const ELEMENTS = new Set(["Ember", "Aqua", "Leaf"]);
 
 const STYLE =
@@ -31,30 +35,35 @@ const getGuard = () =>
     dailyCap: Number(process.env.SUMMON_DAILY_CAP) || 50,
   }));
 
-function magicaHeaders(key) {
-  return { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
+function spiralHeaders(key, extra = {}) {
+  return { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...extra };
 }
 
 async function getRun(key, runId) {
-  const r = await fetch(`${BASE}/nodes/runs/${encodeURIComponent(runId)}`, { headers: magicaHeaders(key) });
+  const r = await fetch(`${BASE}/v1/runs/${encodeURIComponent(runId)}?wait_seconds=0`, { headers: spiralHeaders(key) });
   if (!r.ok) throw new Error(`getRun ${r.status}`);
   return r.json();
 }
 
-async function startRun(key, nodeType, input) {
-  const res = await fetch(`${BASE}/nodes/${nodeType}/run`, {
+/** First image URL of a run's output, or undefined. */
+function firstImageUrl(run) {
+  return run.output?.items?.find((it) => it?.type === "image" && typeof it.url === "string")?.url;
+}
+
+async function startRun(key, { provider, model }, input) {
+  const res = await fetch(`${BASE}/v1/runs`, {
     method: "POST",
-    headers: magicaHeaders(key),
-    body: JSON.stringify({ input }),
+    headers: spiralHeaders(key, { "Idempotency-Key": crypto.randomUUID() }),
+    body: JSON.stringify({ provider, model, input }),
   });
-  if (res.status !== 202 && !res.ok) throw new Error(`run start ${res.status}`);
-  const { runId } = await res.json();
-  if (!runId) throw new Error("no runId");
-  return runId;
+  if (res.status !== 200 && res.status !== 202) throw new Error(`run start ${res.status}`);
+  const { id } = await res.json();
+  if (!id) throw new Error("no run id");
+  return id;
 }
 
 export default async function handler(req, res) {
-  const key = process.env.MAGICA_KEY;
+  const key = process.env.SPIRAL_API_KEY;
   if (!key) {
     res.status(500).json({ error: "Summoning is not configured on this deploy." });
     return;
@@ -63,19 +72,20 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const runId = req.query.runId;
-      // Strict allowlist: runIds are UUID-shaped. Reject anything else so a crafted
-      // value can't path-traverse to other authenticated Magica endpoints via our key.
+      // Strict allowlist: runIds are UUIDs. Reject anything else so a crafted
+      // value can't path-traverse to other authenticated Spiral endpoints via our key.
       if (typeof runId !== "string" || !RUN_ID.test(runId)) {
         res.status(400).json({ error: "bad runId" });
         return;
       }
       const run = await getRun(key, runId);
-      if (DONE_EXCLUDES.has(run.status)) {
+      if (PENDING.has(run.status)) {
         res.status(200).json({ status: "pending" });
-      } else if (run.status === "FAILED" || run.error) {
+      } else if (run.status !== "completed" || run.error) {
         res.status(200).json({ status: "failed" });
       } else {
-        res.status(200).json({ status: "done", result: run.output?.result ?? [] });
+        const url = firstImageUrl(run);
+        res.status(200).json(url ? { status: "done", result: [url] } : { status: "failed" });
       }
       return;
     }
@@ -110,10 +120,10 @@ export default async function handler(req, res) {
         }
         const flavor = element === "Ember" ? "fiery" : element === "Aqua" ? "aquatic" : "leafy plant";
         const prompt = `a ${flavor} creature: ${description}. ${STYLE}`;
-        const runId = await startRun(key, "gpt_image_2", {
+        const runId = await startRun(key, GEN, {
           prompt,
-          image_size: "1:1",
-          output_format: "PNG",
+          image_size: "square_hd",
+          output_format: "png",
           num_images: 1,
         });
         res.status(200).json({ runId });
@@ -129,8 +139,8 @@ export default async function handler(req, res) {
           return;
         }
         const gen = await getRun(key, genRunId);
-        const imageUrl = gen.output?.result?.[0];
-        if (DONE_EXCLUDES.has(gen.status) || gen.status === "FAILED" || typeof imageUrl !== "string") {
+        const imageUrl = firstImageUrl(gen);
+        if (gen.status !== "completed" || typeof imageUrl !== "string") {
           res.status(409).json({ error: "That summon has no finished image yet." });
           return;
         }
@@ -142,7 +152,7 @@ export default async function handler(req, res) {
           res.status(503).json({ error: "The Wellspring is resting for today. Try again tomorrow." });
           return;
         }
-        const runId = await startRun(key, "background_remover", { image_url: imageUrl });
+        const runId = await startRun(key, BG, { image: imageUrl });
         res.status(200).json({ runId });
         return;
       }

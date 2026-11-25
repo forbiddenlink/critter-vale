@@ -10,18 +10,28 @@ function call(handler, { method = "POST", body, query = {}, headers = {} }) {
 describe("api/summon handler", () => {
   let handler;
   let started;
+  let headersSeen;
   beforeEach(async () => {
     vi.resetModules();
-    process.env.MAGICA_KEY = "test-key";
+    process.env.SPIRAL_API_KEY = "test-key";
     process.env.SUMMON_DAILY_CAP = "3";
     for (const k of ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN"]) delete process.env[k]; // in-memory path
     started = [];
+    headersSeen = [];
     vi.stubGlobal("fetch", async (url, init) => {
-      if (url.endsWith("/run")) {
-        started.push(JSON.parse(init.body).input);
-        return { status: 202, ok: true, json: async () => ({ runId: `run-${started.length}-abcdefghijklmnop` }) };
+      if (init?.method === "POST") {
+        const body = JSON.parse(init.body);
+        started.push(body);
+        headersSeen.push(init.headers);
+        return { status: 202, ok: true, json: async () => ({ id: `00000000-0000-4000-8000-00000000000${started.length}` }) };
       }
-      return { ok: true, json: async () => ({ status: "SUCCEEDED", output: { result: ["https://cdn.magica.test/img.png"] } }) };
+      return {
+        ok: true,
+        json: async () => ({
+          status: "completed",
+          output: { items: [{ type: "image", url: "https://g.spiral.test/img.png", mime_type: "image/png" }] },
+        }),
+      };
     });
     handler = (await import("./summon.js")).default;
   });
@@ -29,10 +39,46 @@ describe("api/summon handler", () => {
 
   it("ignores a client-supplied image URL and removes the background of our own image", async () => {
     const r = await call(handler, {
-      body: { op: "bg", runId: "gen-run-abcdefghijklmnop", imageUrl: "https://attacker.example/x.png" },
+      body: { op: "bg", runId: "11111111-1111-4111-8111-111111111111", imageUrl: "https://attacker.example/x.png" },
     });
     expect(r.code).toBe(200);
-    expect(started).toEqual([{ image_url: "https://cdn.magica.test/img.png" }]);
+    expect(started).toEqual([
+      {
+        provider: "wavespeed",
+        model: "wavespeed-ai/image-background-remover",
+        input: { image: "https://g.spiral.test/img.png" },
+      },
+    ]);
+    expect(headersSeen[0]["Idempotency-Key"]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(headersSeen[0].Authorization).toBe("Bearer test-key");
+  });
+
+  it("starts image gen on fal gpt-image-2 and returns the run id", async () => {
+    const r = await call(handler, { body: { op: "gen", description: "a fox", element: "Ember" } });
+    expect(r.code).toBe(200);
+    expect(r.body).toEqual({ runId: "00000000-0000-4000-8000-000000000001" });
+    expect(started[0]).toMatchObject({
+      provider: "fal",
+      model: "openai/gpt-image-2",
+      input: { image_size: "square_hd", output_format: "png", num_images: 1 },
+    });
+  });
+
+  it("maps polled runs to pending / done / failed", async () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const q = { runId: id };
+    expect((await call(handler, { method: "GET", query: q })).body).toEqual({
+      status: "done",
+      result: ["https://g.spiral.test/img.png"],
+    });
+    vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => ({ status: "running" }) }));
+    expect((await call(handler, { method: "GET", query: q })).body).toEqual({ status: "pending" });
+    vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => ({ status: "failed" }) }));
+    expect((await call(handler, { method: "GET", query: q })).body).toEqual({ status: "failed" });
+  });
+
+  it("rejects a non-UUID poll runId", async () => {
+    expect((await call(handler, { method: "GET", query: { runId: "../v1/me/aaaaaaaa" } })).code).toBe(400);
   });
 
   it("rejects bg without a valid gen runId", async () => {
@@ -42,7 +88,7 @@ describe("api/summon handler", () => {
   });
 
   it("removes a background only once per generated image", async () => {
-    const body = { op: "bg", runId: "gen-run-abcdefghijklmnop" };
+    const body = { op: "bg", runId: "11111111-1111-4111-8111-111111111111" };
     expect((await call(handler, { body })).code).toBe(200);
     expect((await call(handler, { body })).code).toBe(409);
   });

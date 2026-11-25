@@ -1,5 +1,5 @@
 // Summon Lab: describe a critter, generate it live via /api/summon (which proxies
-// Magica so the key stays server-side), then add the result to your party.
+// Spiral so the key stays server-side), then add the result to your party.
 import type { Element } from "../game/critters";
 import { customId, rollCustom } from "../game/customSpecies";
 import type { CustomSpecies } from "../game/customSpecies";

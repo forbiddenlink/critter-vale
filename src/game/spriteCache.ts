@@ -1,4 +1,4 @@
-// Durable sprite storage for summoned critters. Magica CDN media may be deleted after ~30 days,
+// Durable sprite storage for summoned critters. Spiral output links expire after 30 days,
 // so the image bytes are copied into IndexedDB (keyed by species id) and sprites resolve from
 // there first, falling back to the remote URL, then the bundled PNG. The pure pieces take their
 // dependencies as arguments so they can be unit-tested without a browser.

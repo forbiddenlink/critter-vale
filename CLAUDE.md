@@ -15,7 +15,7 @@ spec).
 - Vanilla TypeScript (no framework) + Three.js for 3D rendering, built with Vite
 - Package manager: pnpm (`pnpm-lock.yaml`)
 - Vitest for unit tests
-- `api/summon.js` is a Vercel serverless function proxying AI image generation (Magica API)
+- `api/summon.js` is a Vercel serverless function proxying AI image generation (Spiral API)
   for the Summon Lab - keeps the API key server-side, throttles by IP, validates inputs
 
 ## Commands
@@ -46,8 +46,8 @@ pnpm test          # vitest run
 
 ## Env vars
 
-`MAGICA_KEY` - server-side only, read in `api/summon.js`, never exposed to the client.
-`SUMMON_DAILY_CAP` - optional, paid Magica runs per instance per day (default 50).
+`SPIRAL_API_KEY` - server-side only, read in `api/summon.js`, never exposed to the client.
+`SUMMON_DAILY_CAP` - optional, paid Spiral runs per instance per day (default 50).
 
 ## Gotchas
 
@@ -57,6 +57,6 @@ pnpm test          # vitest run
   limiter if traffic grows.
 - Background removal (`op:"bg"`) takes a gen `runId`, not an image URL: the server reads that
   run's output itself, once per run, so the endpoint cannot clean arbitrary images.
-- `runId` values from the Magica API are validated against a strict allowlist
-  (`/^[a-zA-Z0-9-]{16,64}$/`) before being used in a follow-up request, to stop a crafted
-  value from reaching other Magica endpoints through the server's key.
+- `runId` values (Spiral run UUIDs) are validated against a strict UUID allowlist before being
+  used in a follow-up request, to stop a crafted
+  value from reaching other Spiral endpoints through the server's key.

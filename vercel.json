@@ -9,7 +9,7 @@
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
         {
           "key": "Content-Security-Policy-Report-Only",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://static.magica.com; media-src 'self' blob:; connect-src 'self' https://static.magica.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://g.spiral.ai https://f4220df6752db5724ae9a952a6c06bd6.r2.cloudflarestorage.com; media-src 'self' blob:; connect-src 'self' https://g.spiral.ai https://f4220df6752db5724ae9a952a6c06bd6.r2.cloudflarestorage.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         }
       ]
     }

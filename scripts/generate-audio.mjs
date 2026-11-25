@@ -1,20 +1,25 @@
-// One-off build script: generates the audio pack with Magica, downloads every asset into
+// One-off build script: generates the audio pack with Spiral, downloads every asset into
 // public/audio/ (CDN URLs are never stored) and transcodes with ffmpeg.
-// Usage: MAGICA_KEY=... node scripts/generate-audio.mjs [name ...]   (needs ffmpeg on PATH)
+// Usage: SPIRAL_API_KEY=... node scripts/generate-audio.mjs [name ...]   (needs ffmpeg on PATH)
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdirSync, rmSync, writeFileSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-const BASE = "https://api.magica.com/api/v1";
-const KEY = process.env.MAGICA_KEY;
-if (!KEY) throw new Error("MAGICA_KEY missing");
+const BASE = "https://api.spiral.ai";
+const KEY = process.env.SPIRAL_API_KEY;
+if (!KEY) throw new Error("SPIRAL_API_KEY missing");
 const OUT = new URL("../public/audio/", import.meta.url).pathname;
 const TMP = join(process.env.TMPDIR || "/tmp", "critter-audio-raw");
 mkdirSync(OUT, { recursive: true });
 mkdirSync(TMP, { recursive: true });
 
-const sfx = (prompt, duration) => ({ model: "cassette_ai_sfx", input: { prompt, duration }, kind: "sfx" });
-const music = (prompt) => ({ model: "lyria_3_5", input: { prompt }, kind: "music" });
+const sfx = (prompt, duration) => ({ provider: "fal", model: "cassetteai/sound-effects-generator", input: { prompt, duration }, kind: "sfx" });
+const music = (prompt) => ({
+  provider: "gemini",
+  model: "lyria-3.5",
+  input: { input: prompt, response_format: { type: "audio", mime_type: "audio/mp3" } },
+  kind: "music",
+});
 
 const PACK = {
   "hit-ember": sfx("short fiery impact hit, crackling flame whoosh burst, retro RPG battle attack, no music", 1),
@@ -31,16 +36,20 @@ const PACK = {
 
 const H = { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" };
 
-async function run(model, input) {
-  const r = await fetch(`${BASE}/nodes/${model}/run`, { method: "POST", headers: H, body: JSON.stringify({ input }) });
-  if (!r.ok && r.status !== 202) throw new Error(`start ${model} ${r.status}`);
-  const { runId } = await r.json();
+async function run({ provider, model, input }) {
+  const r = await fetch(`${BASE}/v1/runs`, {
+    method: "POST",
+    headers: { ...H, "Idempotency-Key": crypto.randomUUID() },
+    body: JSON.stringify({ provider, model, input }),
+  });
+  if (!r.ok) throw new Error(`start ${model} ${r.status}`);
+  const { id } = await r.json();
   for (let i = 0; i < 90; i++) {
     await new Promise((res) => setTimeout(res, 4000));
-    const g = await (await fetch(`${BASE}/nodes/runs/${runId}`, { headers: H })).json();
-    if (["RUNNING", "PENDING", "QUEUED"].includes(g.status)) continue;
-    if (g.status === "FAILED" || g.error) throw new Error(`run failed: ${model}`);
-    return { url: g.output?.result?.[0], credits: g.creditUsed };
+    const g = await (await fetch(`${BASE}/v1/runs/${id}?wait_seconds=0`, { headers: H })).json();
+    if (["queued", "running"].includes(g.status)) continue;
+    if (g.status !== "completed" || g.error) throw new Error(`run failed: ${model}`);
+    return { url: g.output?.items?.find((it) => it.type === "audio")?.url };
   }
   throw new Error("timeout");
 }
@@ -111,14 +120,12 @@ const SRC = new URL("./audio-src/", import.meta.url).pathname;
 mkdirSync(SRC, { recursive: true });
 
 const wanted = process.argv.slice(2);
-let credits = 0;
 for (const [name, spec] of Object.entries(PACK)) {
   if (wanted.length && !wanted.includes(name)) continue;
   const raw = spec.kind === "sfx" ? join(SRC, `${name}.bin`) : join(TMP, `${name}.bin`);
   if (!existsSync(raw)) {
     console.log("generating", name);
-    const { url, credits: c } = await run(spec.model, spec.input);
-    credits += c ?? 0;
+    const { url } = await run(spec);
     if (!url) throw new Error(`no output for ${name}`);
     writeFileSync(raw, Buffer.from(await (await fetch(url)).arrayBuffer()));
   } else console.log("reprocessing", name);
@@ -133,4 +140,3 @@ for (const [name, spec] of Object.entries(PACK)) {
   }
   if (!existsSync(dest)) throw new Error(`transcode failed: ${name}`);
 }
-console.log("credits used:", credits);
