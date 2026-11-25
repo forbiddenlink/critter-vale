@@ -156,4 +156,5 @@ export function sameOrigin(headers) {
   }
 }
 
-export const RUN_ID = /^[a-zA-Z0-9-]{16,64}$/;
+// Spiral run ids are UUIDs.
+export const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

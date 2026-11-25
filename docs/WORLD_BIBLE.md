@@ -126,7 +126,7 @@ makes summons feel earned, paces the real API cost, and folds the hook into the 
 ## 10. Art & audio direction
 
 - **Critters:** chibi, expressive, painterly HD-2D sprites on a clean field (matches the
-  Magica pipeline already used). Consistent style prompt lives in the summon function + gen scripts.
+  Spiral pipeline now used). Consistent style prompt lives in the summon function + gen scripts.
 - **World:** stylized-3D, rounded shapes, golden light, soft shadows, bloom on lanterns.
 - **Audio:** cozy town theme (exists) + a distinct battle theme (todo) + a Wellspring theme
   for the finale. SFX for hits/catch/level (exist).
