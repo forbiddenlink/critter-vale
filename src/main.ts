@@ -280,7 +280,8 @@ world.onInteract = (npc) => {
     ? ["The path to the Wellspring is sealed.", "Return when you hold all three Crests: Ember, Aqua, and Leaf."]
     : npc.lines;
   const render = () => {
-    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${lines[i]}</p><div class="dialog-cont">Continue → space / click${i < lines.length - 1 ? "" : " to close"}</div></div>`;
+    const how = matchMedia("(pointer: coarse)").matches ? "tap" : "E / space / click";
+    d.innerHTML = `<div class="dialog-box"><div class="dialog-name">${npc.name}</div><p>${lines[i]}</p><div class="dialog-cont">Continue → ${how}${i < lines.length - 1 ? "" : " to close"}</div></div>`;
   };
   const afterDialog = () => {
     if (!gated && npc.challenge && !beatenTrainers.has(npc.name)) startTrainer(npc);
@@ -298,7 +299,10 @@ world.onInteract = (npc) => {
     else render();
   };
   const onKey = (e: KeyboardEvent) => {
-    if (e.key === " " || e.key === "e" || e.key === "Enter") {
+    // Lowercase so Shift or Caps Lock still advance: the overworld opens
+    // this dialog on either case of E (overworld.ts lowercases the key).
+    const k = e.key.toLowerCase();
+    if (k === " " || k === "e" || k === "enter") {
       e.preventDefault();
       advance();
     } else if (e.key === "Escape") close();
