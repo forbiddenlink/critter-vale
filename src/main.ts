@@ -630,10 +630,28 @@ guideBtn.className = "mute guidebtn";
 guideBtn.textContent = "Field guide";
 guideBtn.title = "Field guide (H)";
 guideBtn.addEventListener("click", openGuide);
+const shareBtn = document.createElement("button");
+shareBtn.className = "mute sharebtn";
+shareBtn.textContent = "Share team";
+shareBtn.title = "Share your team as a picture";
+shareBtn.addEventListener("click", () => {
+  if (!team.length || shareBtn.disabled) return;
+  shareBtn.disabled = true;
+  void import("./ui/shareCard")
+    .then(({ shareTeam }) =>
+      shareTeam(team.map((m) => ({ id: m.species.id, name: m.species.name, level: m.level, element: m.species.element })), spriteUrl),
+    )
+    .then((outcome) => {
+      if (outcome === "downloaded") showToast("Team card saved. Summary copied to your clipboard.");
+      else if (outcome === "shared") showToast("Team card shared.");
+      else if (outcome === "failed") showToast("Could not make the team card.");
+    })
+    .finally(() => { shareBtn.disabled = false; });
+});
 const tools = document.createElement("nav");
 tools.className = "game-tools";
 tools.setAttribute("aria-label", "Game tools");
-tools.append(dexBtn, guideBtn, mute, reset);
+tools.append(dexBtn, guideBtn, shareBtn, mute, reset);
 document.body.appendChild(tools);
 window.addEventListener("keydown", (event: KeyboardEvent): void => {
   if (event.key.toLowerCase() === "h" && team.length && !world.inputBlocked()) openGuide();
