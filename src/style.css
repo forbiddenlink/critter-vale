@@ -1309,8 +1309,10 @@ body:has(.battle, .title, .faint, .victory) > .hud { visibility: hidden; }
   .hud-objective p { font-size: 11px; line-height: 1.4; }
   .hud-notes { margin-top: 0; }
   .hud-notes summary { min-height: 24px; padding: 3px 0; }
-  .game-tools { left: 16px; right: 16px; bottom: 124px; grid-template-columns: repeat(4, 1fr); }
-  .game-tools .mute { padding: 0 4px; white-space: nowrap; }
+  /* Five tools: three on the first row, two wider on the second, so no button wraps alone. */
+  .game-tools { left: 16px; right: 16px; bottom: 124px; grid-template-columns: repeat(6, 1fr); }
+  .game-tools .mute { grid-column: span 2; padding: 0 4px; white-space: nowrap; }
+  .game-tools .mute:nth-child(n+4) { grid-column: span 3; }
   .prompt { bottom: 184px; }
 }
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse), (orientation: landscape) and (max-height: 500px) and (max-width: 760px) {
