@@ -1295,6 +1295,24 @@ body:has(.battle, .title, .faint, .victory) > .hud { visibility: hidden; }
   .hud { max-height: calc(100dvh - 320px); overflow-y: auto; overscroll-behavior: contain; }
   .prompt { bottom: 244px; }
 }
+/* Phones in portrait: the full journal card covered about a third of the world and the 2x2 tool
+   grid floated mid-screen. Keep sprigs, caught, crests, party HP, lead button and the objective, but
+   drop the secondary lines and lay the tools out in one slim row above the touch controls. */
+@media (orientation: portrait) and (max-width: 760px) {
+  .hud { padding: 10px 14px; }
+  .hud-heading strong { font-size: 20px; }
+  .hud-resources { padding: 6px 0; }
+  .hud-party-title { display: none; }
+  .hud-party { max-height: 56px; margin-top: 6px; }
+  .party-trait, .party-xp { display: none; }
+  .hud-objective { margin-top: 6px; padding-top: 6px; }
+  .hud-objective p { font-size: 11px; line-height: 1.4; }
+  .hud-notes { margin-top: 0; }
+  .hud-notes summary { min-height: 24px; padding: 3px 0; }
+  .game-tools { left: 16px; right: 16px; bottom: 124px; grid-template-columns: repeat(4, 1fr); }
+  .game-tools .mute { padding: 0 4px; white-space: nowrap; }
+  .prompt { bottom: 184px; }
+}
 @media (orientation: landscape) and (max-height: 500px) and (pointer: coarse), (orientation: landscape) and (max-height: 500px) and (max-width: 760px) {
   .hud { top: 16px; left: 16px; width: 260px; max-width: calc(100% - 240px); max-height: calc(100dvh - 148px); overflow-y: auto; overscroll-behavior: contain; }
   .hud-heading { display: block; }
